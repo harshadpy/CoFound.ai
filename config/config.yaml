@@ -1,0 +1,19 @@
+# CoFound.ai Configuration
+
+api:
+  open_ai_key: ${OPENAI_API_KEY}  # Load from env
+  port: 8000
+  host: "0.0.0.0"
+
+llm:
+  reasoning_model: "gpt-4.1-preview"  # For Critic, Decision, Synthesis
+  fast_model: "o4-mini"               # For Ideation, Structuring, Similarity
+  embedding_model: "text-embedding-3-large"
+
+agents:
+  max_retries: 3
+  timeout_seconds: 120
+
+storage:
+  reports_dir: "data/reports"
+  memory_dir: "data/memory"

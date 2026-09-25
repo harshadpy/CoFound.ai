@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.*
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Data / logs
+data/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Images (large binaries)
+image.png
+image1.png
+image2.png
+image3.png
+image4.png
+image5.png
