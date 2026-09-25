@@ -2,31 +2,36 @@
 
 # 🚀 CoFound.ai
 
-### Your Autonomous AI Co-Founder
+### Agentic AI Co-Founder & Autonomous Market Intelligence
 
-**Turn a messy idea into a market intelligence report — no manual research required.**
+**Turn raw, unstructured startup ideas into institutional-grade market intelligence dossiers — in minutes.**
 
 <p>
-  <img src="https://img.shields.io/badge/status-active--development-orange?style=for-the-badge" alt="status"/>
+  <img src="https://img.shields.io/badge/status-production--ready-emerald?style=for-the-badge" alt="status"/>
   <img src="https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge" alt="license"/>
-  <img src="https://img.shields.io/badge/python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python"/>
+  <img src="https://img.shields.io/badge/python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="python"/>
   <img src="https://img.shields.io/badge/node-18+-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="node"/>
+  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="supabase"/>
 </p>
 <p>
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="fastapi"/>
   <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black" alt="react"/>
   <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="vite"/>
   <img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="tailwind"/>
+  <img src="https://img.shields.io/badge/Three.js-000000?style=flat-square&logo=three.js&logoColor=white" alt="threejs"/>
   <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square" alt="langgraph"/>
   <img src="https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white" alt="openai"/>
+  <img src="https://img.shields.io/badge/Tavily%20AI-FF6B00?style=flat-square" alt="tavily"/>
 </p>
 
 <p>
   <a href="#-overview">Overview</a> •
-  <a href="#-features">Features</a> •
+  <a href="#-key-features">Key Features</a> •
+  <a href="#-the-11-agent-swarm">The 11-Agent Swarm</a> •
   <a href="#-architecture">Architecture</a> •
-  <a href="#-the-agent-pipeline">Agent Pipeline</a> •
+  <a href="#-research-tools-suite">Research Tools</a> •
   <a href="#%EF%B8%8F-getting-started">Getting Started</a> •
+  <a href="#-cloud--database-setup">Cloud & Supabase</a> •
   <a href="#-tech-stack">Tech Stack</a> •
   <a href="#%EF%B8%8F-roadmap">Roadmap</a>
 </p>
@@ -36,116 +41,124 @@
 <br/>
 
 > [!TIP]
-> **The one-liner:** *User triggers → Agents think → System decides → Report delivered.*
-> You don't micromanage the research — the system runs autonomously, end-to-end.
+> **The Core Thesis:** *User triggers → 11 Agentic Workers Investigate → Adversary Challenges → Consensus Reached → Institutional Dossier Delivered.*
+> You never micromanage tedious research — CoFound.ai executes deep market diligence autonomously, end-to-end.
 
 <br/>
 
 ## 📖 Overview
 
-**CoFound.ai** is an agentic platform that acts as your AI Co-Founder. Give it a raw, unstructured idea and **11 specialized agents** take over — researching the market, mapping competitors, hunting for gaps, and stress-testing your assumptions — before handing back a clear **Go / Pivot / Kill** verdict backed by a full intelligence report.
+**CoFound.ai** is an agentic venture evaluation platform that acts as your AI Co-Founder. Drop in a raw, napkin-sketch startup concept and **11 specialized agentic workers** orchestrate in parallel — scraping the live web, quantifying total addressable markets (TAM), mapping competitor moats, validating customer willingness-to-pay, and running adversarial red-team critique.
 
-Built for solo founders, indie hackers, early-stage teams, and product leads who want a sharp second opinion before spending months building the wrong thing.
+Within minutes, CoFound.ai delivers an institutional-grade **Go / Pivot / Kill** verdict backed by unit economics, fatal risk analysis, and actionable next steps.
 
-<br/>
+---
 
-## 🎯 Why CoFound.ai?
+## ✨ Key Features
 
-<table>
-<tr>
-<td width="50%" valign="top">
+### 🤖 11-Agent Parallel Swarm
+- **Deterministic Orchestration**: Powered by **LangGraph** with a directed acyclic graph (DAG) topology — parallel research workers with sequential synthesis and adversarial evaluation.
+- **Real-Time Live Web Intelligence**: Powered by **Tavily AI & DuckDuckGo Search** to evaluate live market trends, real pricing, and recent competitors rather than stale model weights.
+- **Adversarial Red-Teaming**: A dedicated Critic Agent stress-tests founder assumptions, penalizes overconfidence, and surfaces fatal kill conditions.
+- **Clear Go / Pivot / Kill Verdict**: Definitive institutional decisioning with numeric confidence scores, financial unit economics, and 30-60-90 day milestone plans.
 
-### ❌ The Problem
+### 💬 Grounded AI Copilot
+- **Live Context-Aware Drawer**: Slide-out assistant (`Cmd/Ctrl + K` or top bar) grounded in your active startup hypothesis and multi-agent report findings.
+- **Executive Actions**: Instant 1-click prompts for "Suggest 3 Wedges", "Draft 30-sec Elevator Pitch", "Simulate VC Pushback", and "Unit Economics Check".
 
-- Founders have fragmented ideas and no time for deep research
-- Existing tools are static dashboards — you do all the digging
-- Nothing challenges your assumptions or reasons end-to-end
-- Teams jump into building *before* validating
+### 📊 Institutional Research Tools Suite
+- **Trend Explorer (`/trends`)**: Bloomberg/PitchBook-grade quantitative parser breaking down narrative market data into crisp headline figures (`USD 4.5B`, `18% CAGR ↗`) with granular sub-sector micro-cards.
+- **Market Gaps & Validation (`/gaps`)**: Real-time customer friction signals, voice-of-customer verbatim quotes, severity progress meters, and Willingness to Pay (WTP) metrics.
+- **Competitor Analysis (`/competitors`)**: 10-tier Market Saturation Index, Competitive Dynamics Summary, and rival cards with headquarters, funding badges, and moat vs. vulnerability breakdowns.
+- **Idea Brainstorming & Pivots (`/brainstorm`)**: AI-driven concept expansion with structured Initial Wedge & Monetization cards, plus contrarian pivot architectures.
+- **Curated Problem Library (`/ideas`)**: Pre-validated problem statements across B2B SaaS, HealthTech, FinTech, CleanTech, and Quick Commerce.
 
-</td>
-<td width="50%" valign="top">
+### ☁️ Supabase Cloud & Persistence
+- **Cloud Database**: Persistent storage for public shared reports, user profiles, and platform notifications.
+- **Public Report Sharing (`/share/:id`)**: One-click public URLs for pitching investors, co-founders, or advisors.
+- **BYOK (Bring-Your-Own-Key) Vault**: Secure per-user API key management for custom OpenAI and Tavily keys stored in Supabase.
+- **Real-time Notifications**: Instant alert feed with unread badges and direct link routing.
+- **Local History (`/history`)**: Local SQLite persistence with search, verdict filters (`ALL`, `GO`, `PIVOT`, `KILL`), and 1-click iteration.
 
-### ✅ The CoFound.ai Way
-
-- One input, one autonomous pipeline, one clear verdict
-- Agents actively research the live web, not stale training data
-- A dedicated Critic Agent adversarially checks every claim
-- You decide what **not** to build — before writing a line of code
-
-</td>
-</tr>
-</table>
-
-<br/>
-
-## ✨ Features
-
-| | | |
-|:---:|---|---|
-| 🧠 | **Autonomous Analysis** | Drop in an idea and 11 specialized agents — Ideation, Trend Intelligence, Competitor Analysis, Feasibility, Critic, Decision, and more — evaluate it end-to-end. |
-| 🌐 | **Real-Time Research** | Agents actively search the web (DuckDuckGo, trend signals, community data) instead of relying on stale model knowledge. |
-| 🔀 | **Stateful Graph Workflow** | Orchestrated with **LangGraph** — parallel research, then enforced sequential synthesis. Agents never talk over each other. |
-| ⚖️ | **Adversarial Self-Critique** | A dedicated Critic Agent challenges assumptions and penalizes overconfidence before any decision is finalized. |
-| 🎯 | **One Clear Verdict** | Every run ends in a single opinionated call — **Go / Pivot / Kill** — with rationale, confidence score, and next actions. |
-| 🛠️ | **Manual Research Tools** | Sidebar utilities — Trend Explorer, Competitor Research, Market Gap Matrix — for when you want to dig in yourself. |
+### 📄 Professional Export & Guardrails
+- **Print & PDF Export**: Executive print stylesheet with dedicated cover page, institutional verdict badges, and page-break rules for clean PDF export.
+- **1-Click Markdown (.md) Export**: Download complete dossier for local documentation or Notion/Obsidian import.
+- **Hallucination Guardrails**: Automated competitor grounding engine that cross-references extracted URLs and company names against search text to eliminate synthetic domains.
 
 <br/>
 
 ## 🏗️ Architecture
 
 ```mermaid
-flowchart LR
-    U["🧑 User"] -->|"raw idea"| FE["💻 Frontend<br/>React + Vite + Tailwind<br/>:5173"]
-    FE <-->|"REST API"| BE["⚙️ Backend<br/>FastAPI + LangGraph + LangChain<br/>:8000"]
-    BE --> AG["🤖 Multi-Agent Pipeline<br/>11 specialized agents"]
-    AG --> LLM["🧠 OpenAI<br/>GPT-4o / o1-mini"]
-    AG --> SEARCH["🔎 DuckDuckGo Search<br/>& Trend Signals"]
-    AG --> SCRAPE["🕸️ Custom Web Scraper"]
+flowchart TD
+    subgraph UI ["💻 Frontend (React + Vite + TailwindCSS + Three.js)"]
+        A["🏠 Home Screen<br/>(3D Parallax Canvas)"]
+        COPILOT["💬 AI Copilot Drawer"]
+        TOOLS["🛠️ Research Tools<br/>(Trends, Gaps, Competitors, Ideas)"]
+        REP["📊 Report Dossier & PDF Export"]
+    end
 
-    style U fill:#f5f5f5,stroke:#333,color:#000
-    style FE fill:#61DAFB,stroke:#333,color:#000
-    style BE fill:#009688,stroke:#333,color:#fff
-    style AG fill:#7C3AED,stroke:#333,color:#fff
-    style LLM fill:#412991,stroke:#333,color:#fff
-    style SEARCH fill:#DE5833,stroke:#333,color:#fff
-    style SCRAPE fill:#334155,stroke:#333,color:#fff
+    subgraph API ["⚙️ Backend API (FastAPI)"]
+        ROUTER["FastAPI Router<br/>(:8000)"]
+        GUARD["🛡️ Hallucination Guardrails"]
+    end
+
+    subgraph DB ["☁️ Data & Cloud Persistence"]
+        SQLITE["💾 SQLite<br/>(Local History)"]
+        SUPABASE["⚡ Supabase Cloud<br/>(Users, BYOK, Shared Reports, Alerts)"]
+    end
+
+    subgraph SWARM ["🤖 11-Agent Intelligence Swarm (LangGraph)"]
+        AG1["1️⃣ Thought Structuring"]
+        AG2["2️⃣ Ideation & Wedges"]
+        AG3["3️⃣ Pattern & Similarity"]
+        AG4["4️⃣ Market Validation"]
+        AG5["5️⃣ Trend Intelligence"]
+        AG6["6️⃣ Competitor Analysis"]
+        AG7["7️⃣ Feasibility & Tech"]
+        AG8["8️⃣ Synthesis & Scoring"]
+        AG9["9️⃣ Adversarial Critic"]
+        AG10["🔟 Decision Consensus"]
+        AG11["1️⃣1️⃣ Report Generation"]
+    end
+
+    UI <-->|"REST API / SSE"| API
+    API <--> SWARM
+    API <--> DB
+    SWARM -->|"Live Web Search"| WEB["🔎 Tavily AI & DuckDuckGo"]
+    SWARM -->|"Reasoning Models"| LLM["🧠 OpenAI GPT-4o / Luna"]
 ```
 
 <br/>
 
-## 🧩 The Agent Pipeline
-
-CoFound.ai runs a **deterministic execution graph**: one entry point, safe parallelism during research, a single critic + decision pass at the end. No chat loops, no agent democracy.
+## 🧩 The 11-Agent Swarm Pipeline
 
 ```mermaid
 flowchart TD
-    A["📝 User Input"] --> B["1️⃣ Thought Structuring Agent<br/><sub>cleans messy input → structured intent</sub>"]
-    B --> C["2️⃣ Ideation Agent<br/><sub>problem-centric idea generation</sub>"]
-    C --> D["3️⃣ Similarity & Pattern Agent<br/><sub>detects repeats & saturation</sub>"]
+    A["📝 Raw Founder Input"] --> B["1️⃣ Thought Structuring Agent<br/><sub>Normalizes messy ideas into core hypotheses</sub>"]
+    B --> C["2️⃣ Ideation Agent<br/><sub>Formulates target wedges & monetization angles</sub>"]
+    C --> D["3️⃣ Similarity Agent<br/><sub>Vector search against past ideas to prevent duplicates</sub>"]
 
-    D --> E["4️⃣ Market Validation Agent"]
-    D --> F["5️⃣ Trend Intelligence Agent"]
-    D --> G["6️⃣ Competitor Analysis Agent"]
-    D --> H["7️⃣ Feasibility Agent"]
+    D --> E["4️⃣ Market Validation Agent<br/><sub>Scrapes pain signals & Willingness to Pay</sub>"]
+    D --> F["5️⃣ Trend Intelligence Agent<br/><sub>Quantifies TAM sizing & projected CAGR</sub>"]
+    D --> G["6️⃣ Competitor Analysis Agent<br/><sub>Maps direct/adjacent rivals, funding & moats</sub>"]
+    D --> H["7️⃣ Feasibility Agent<br/><sub>Evaluates technical architecture & compliance</sub>"]
 
-    E --> I["8️⃣ Synthesis Agent<br/><sub>merges results, normalizes scores</sub>"]
+    E --> I["8️⃣ Synthesis Agent<br/><sub>Normalizes scores & builds unified dossier</sub>"]
     F --> I
     G --> I
     H --> I
 
-    I --> J["9️⃣ Critic Agent<br/><sub>challenges assumptions, flags risk</sub>"]
-    J --> K["🔟 Decision Agent<br/><sub>Go / Pivot / Kill + confidence score</sub>"]
-    K --> L["1️⃣1️⃣ Report Generation Agent<br/><sub>builds the final report + export</sub>"]
-    L --> M["📊 Market Intelligence Report"]
+    I --> J["9️⃣ Adversarial Critic Agent<br/><sub>Stress-tests assumptions & surfaces kill conditions</sub>"]
+    J --> K["🔟 Decision Authority Agent<br/><sub>Calculates Go / Pivot / Kill verdict & confidence</sub>"]
+    K --> L["1️⃣1️⃣ Report Generation Agent<br/><sub>Compiles institutional report & executive summary</sub>"]
+    L --> M["📊 Institutional Market Intelligence Dossier"]
 
-    style A fill:#f5f5f5,stroke:#333,color:#000
-    style M fill:#16a34a,stroke:#333,color:#fff
-    style J fill:#dc2626,stroke:#333,color:#fff
-    style K fill:#dc2626,stroke:#333,color:#fff
+    style A fill:#0f172a,stroke:#3b82f6,color:#fff
+    style M fill:#059669,stroke:#10b981,color:#fff
+    style J fill:#be123c,stroke:#f43f5e,color:#fff
+    style K fill:#7c3aed,stroke:#8b5cf6,color:#fff
 ```
-
-> [!NOTE]
-> **Design principles:** one responsibility per agent · no agent talks to raw data directly · parallel execution only where safe · Critic and Decision each run exactly once — no retry loops, low cost, low hallucination risk.
 
 <br/>
 
@@ -153,110 +166,122 @@ flowchart TD
 
 ### Prerequisites
 
-| Requirement | Version |
-|---|---|
-| Python | 3.10+ |
-| Node.js | 18+ |
-| OpenAI API key | [Get one here](https://platform.openai.com/api-keys) |
+| Requirement | Version | Notes |
+|---|---|---|
+| Python | 3.11+ | Backend API & agent pipelines |
+| Node.js | 18+ | Frontend client (React + Vite) |
+| OpenAI API Key | Required | Deep reasoning & critique |
+| Tavily API Key | Recommended | High-speed real-time web search |
+| Supabase Project | Optional | Cloud sync, BYOK, and shared reports |
 
-### 1. Clone the repo
+---
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/harshadpy/cofound.git
 cd cofound
 ```
 
-### 2. Configure environment
+### 2. Configure Environment
 
 Create a `.env` file in the project root:
 
 ```env
-OPENAI_API_KEY=sk-your-key-here
+# Core LLM
+OPENAI_API_KEY=sk-your-openai-key-here
+MODEL_PRIMARY=gpt-4o
+MODEL_FAST=gpt-4o-mini
+
+# Search & Research
+TAVILY_API_KEY=tvly-your-tavily-key-here
+
+# Supabase Cloud (Optional for sharing & cloud sync)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-supabase-anon-or-service-key
+
+# LangSmith Observability (Optional)
+LANGCHAIN_TRACING_V2=false
+LANGCHAIN_API_KEY=
 ```
 
-### 3. Run the backend (API & Agents)
+### 3. Run the Backend API
 
 ```bash
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
-# Start the API server
+# Start FastAPI server with live reload
 python -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-➡️ API live at **`http://localhost:8000`**
+➡️ Backend live at: **`http://localhost:8000`** (Docs at `/docs`)
 
-### 4. Run the frontend (UI)
+### 4. Run the Frontend Client
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-➡️ UI live at **`http://localhost:5173`**
-
-### 5. Generate your first report
-
-Open the app → drop in your raw idea → optionally add industry / geography / user segment → hit **Generate Market Intelligence** → let the agents do the rest.
+➡️ Frontend UI live at: **`http://localhost:5173`**
 
 <br/>
 
-## 📂 Project Structure
+## ☁️ Cloud & Database Setup
 
-```
-cofound/
-├── agents/              # 11 specialized agent implementations
-├── api/                 # FastAPI routes & schemas
-├── config/              # Model routing, thresholds, API config
-├── frontend/            # React + Vite + Tailwind UI
-├── tools/               # Search & scraping integrations
-├── tests/               # Agent, tool, and workflow tests
-├── utils/               # Shared helper functions
-├── requirements.txt     # Python dependencies
-├── render.yaml          # Deployment config (Render)
-├── prd.md               # Full product requirements document
-└── MASTER_REFERENCE.md  # Internal reference documentation
-```
+CoFound.ai runs fully offline with local SQLite for development, and seamlessly connects to **Supabase** for cloud collaboration:
 
-> 📘 See [`prd.md`](./prd.md) for the full product spec, UX architecture, and detailed agent I/O contracts.
+### Supabase Schema
+The following tables power cloud features:
+1. `users`: Stores user profile details, plans, and encrypted BYOK API keys.
+2. `shared_reports`: Stores immutable public report snapshots with unique UUIDs.
+3. `notifications`: Real-time system and analysis alerts.
 
 <br/>
 
 ## 🧱 Tech Stack
 
 <table>
-<tr><th>Layer</th><th>Choice</th><th>Purpose</th></tr>
-<tr><td>Frontend</td><td>React + Vite + TailwindCSS</td><td>Fast iteration, modern UX</td></tr>
-<tr><td>Frontend State</td><td>Zustand</td><td>Lightweight global state</td></tr>
-<tr><td>Backend API</td><td>FastAPI (Python)</td><td>Async, type-safe, agent-friendly</td></tr>
-<tr><td>Orchestration</td><td>LangGraph + LangChain</td><td>Multi-agent execution graphs</td></tr>
-<tr><td>Reasoning Models</td><td>OpenAI GPT-4o / o1-mini</td><td>Deep reasoning, critique, decisions</td></tr>
-<tr><td>Fast Models</td><td>OpenAI o4-mini</td><td>Cheap, iterative reasoning for ideation/structuring</td></tr>
-<tr><td>Embeddings</td><td>OpenAI <code>text-embedding-3-large</code></td><td>Idea clustering & similarity memory</td></tr>
-<tr><td>Search</td><td>DuckDuckGo, custom scraper</td><td>Real-time market & demand signals</td></tr>
-<tr><td>Deployment</td><td>Render (<code>render.yaml</code>)</td><td>One-click hosting</td></tr>
+<tr><th>Domain</th><th>Technology</th><th>Role</th></tr>
+<tr><td><b>Frontend Client</b></td><td>React 19, Vite, TailwindCSS</td><td>High-performance responsive UI</td></tr>
+<tr><td><b>Interactive 3D</b></td><td>Three.js</td><td>Dynamic ambient parallax background</td></tr>
+<tr><td><b>State Management</b></td><td>Zustand</td><td>Lightweight synchronized application state</td></tr>
+<tr><td><b>Backend Server</b></td><td>FastAPI (Python 3.11+)</td><td>Async endpoints, SSE streaming, REST API</td></tr>
+<tr><td><b>Agent Orchestration</b></td><td>LangGraph & LangChain</td><td>Deterministic state graph with 11 parallel workers</td></tr>
+<tr><td><b>AI Models</b></td><td>OpenAI GPT-4o / GPT-4o-mini</td><td>Multi-perspective reasoning, critique & consensus</td></tr>
+<tr><td><b>Search Intelligence</b></td><td>Tavily AI, DuckDuckGo</td><td>Real-time web scraping & competitive verification</td></tr>
+<tr><td><b>Cloud Storage</b></td><td>Supabase (PostgreSQL)</td><td>BYOK vault, public reports, and alerts</td></tr>
+<tr><td><b>Local Storage</b></td><td>SQLite</td><td>Fast local runs and analysis history</td></tr>
 </table>
 
 <br/>
 
 ## 🗺️ Roadmap
 
-- [ ] Founder memory across multiple projects
-- [ ] Investor-ready pitch deck export
-- [ ] Multi-idea portfolio analysis
-- [ ] Per-user agent fine-tuning
-- [ ] Polished PDF / shareable export
+- [x] Autonomous 11-agent parallel research graph
+- [x] Real-time live web intelligence (Tavily AI + DDG)
+- [x] Interactive 3D Three.js Parallax Canvas
+- [x] Executive AI Copilot grounded on active reports
+- [x] Institutional Quantitative Research Suite (Trends, Gaps, Competitors, Ideas)
+- [x] Supabase cloud persistence & BYOK custom keys
+- [x] Public report sharing (`/share/:id`)
+- [x] Multi-page print & PDF export engine
+- [x] Hallucination & grounding verification guardrails
+- [ ] Multi-idea portfolio matrix & comparative analysis
+- [ ] Automated Pitch Deck generator (slide outline + visuals)
+- [ ] Automated competitor change radar & recurring email digests
 
 <br/>
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome!
+Contributions, feature suggestions, and bug reports are welcome!
 
 ```bash
-1. Fork the project
-2. Create your feature branch   → git checkout -b feature/amazing-feature
-3. Commit your changes          → git commit -m 'Add some amazing feature'
-4. Push to the branch           → git push origin feature/amazing-feature
+1. Fork the Project
+2. Create a Feature Branch  (git checkout -b feature/AmazingFeature)
+3. Commit your Changes     (git commit -m 'Add AmazingFeature')
+4. Push to the Branch      (git push origin feature/AmazingFeature)
 5. Open a Pull Request
 ```
 
@@ -270,8 +295,8 @@ Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
 
 <div align="center">
 
-**Made with 🧠 by [harshadpy](https://github.com/harshadpy)**
+**Crafted with 🧠 for visionary founders and builders.**
 
-⭐ *If CoFound.ai saved you from building the wrong thing, consider starring the repo!*
+⭐ *If CoFound.ai helped you evaluate your next venture, star the repository!*
 
 </div>
