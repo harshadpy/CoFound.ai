@@ -32,12 +32,13 @@ async def broadcast_stream_event(analysis_id: str, event_data: dict):
 class AnalysisRequest(BaseModel):
     raw_text: str
     context_tags: Dict[str, Any] = {}
+    user_id: Optional[str] = "default_user"
 
 class AnalysisResponse(BaseModel):
     analysis_id: str
     status: str
 
-async def run_analysis_background(analysis_id: str, raw_text: str, context_tags: Dict[str, Any]):
+async def run_analysis_background(analysis_id: str, raw_text: str, context_tags: Dict[str, Any], user_id: str = "default_user"):
     """
     Runs the 11-agent LangGraph workflow in the background.
     Persists progress to SQLite and broadcasts live telemetry via SSE.
@@ -51,7 +52,7 @@ async def run_analysis_background(analysis_id: str, raw_text: str, context_tags:
         })
         
         initial_state = {
-            "user_id": "default_user",
+            "user_id": user_id,
             "analysis_id": analysis_id,
             "raw_text": raw_text,
             "context_tags": context_tags
@@ -60,7 +61,7 @@ async def run_analysis_background(analysis_id: str, raw_text: str, context_tags:
         # Configure LangSmith run telemetry
         run_config = get_langsmith_config(
             analysis_id=analysis_id,
-            user_id="default_user",
+            user_id=user_id,
             tags=["graph-pipeline", "market-intelligence"],
             metadata={
                 "raw_text": raw_text[:200],
@@ -153,7 +154,7 @@ async def run_analysis_background(analysis_id: str, raw_text: str, context_tags:
             display_title = (raw_title[:45] + "...") if len(raw_title) > 45 else raw_title
             
             create_notification_in_supabase({
-                "user_id": "default_user",
+                "user_id": user_id,
                 "title": f"Swarm Analysis Complete: {display_title}",
                 "message": f"Verdict: {verdict} ({conf}% confidence). Institutional VC audit ready for review.",
                 "type": "analysis_complete",
@@ -186,7 +187,7 @@ async def run_analysis_background(analysis_id: str, raw_text: str, context_tags:
             sync_analysis_to_supabase(failed_record)
             
         create_notification_in_supabase({
-            "user_id": "default_user",
+            "user_id": user_id,
             "title": "Analysis Run Failed",
             "message": f"Agent swarm halted: {str(e)[:90]}",
             "type": "warning",
@@ -202,17 +203,19 @@ async def run_analysis_background(analysis_id: str, raw_text: str, context_tags:
         })
 
 @router.post("/api/analysis", response_model=AnalysisResponse)
+@router.post("/api/analysis/start", response_model=AnalysisResponse)
 async def start_analysis(request: AnalysisRequest, background_tasks: BackgroundTasks):
     """
     Starts an autonomous market intelligence analysis across 11 AI agents.
     Creates an analysis record in SQLite and spawns the LangGraph execution.
     """
     analysis_id = str(uuid.uuid4())
+    effective_user_id = request.user_id or "default_user"
     
     # Create persistent record in SQLite
     db.create_analysis(
         analysis_id=analysis_id,
-        user_id="default_user",
+        user_id=effective_user_id,
         raw_text=request.raw_text,
         context_tags=request.context_tags
     )
@@ -222,7 +225,8 @@ async def start_analysis(request: AnalysisRequest, background_tasks: BackgroundT
         run_analysis_background,
         analysis_id,
         request.raw_text,
-        request.context_tags
+        request.context_tags,
+        effective_user_id
     )
     
     return AnalysisResponse(analysis_id=analysis_id, status="pending")

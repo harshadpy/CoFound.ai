@@ -40,18 +40,45 @@ def get_user_profile(user_id: str = "default_user") -> Optional[Dict[str, Any]]:
         logger.error("Supabase get_user_profile failed", error=str(e))
         return None
 
-def upsert_user_profile(user_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
     client = get_supabase_client()
     if not client:
         return None
     try:
-        res = client.table("users").upsert(user_data).execute()
+        res = client.table("users").select("*").ilike("email", email.strip()).execute()
         if res.data and len(res.data) > 0:
             return res.data[0]
-        return user_data
+        return None
+    except Exception as e:
+        logger.error("Supabase get_user_by_email failed", error=str(e))
+        return None
+
+def upsert_user_profile(user_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    client = get_supabase_client()
+    payload = {
+        "id": user_data["id"],
+        "email": user_data.get("email"),
+        "full_name": user_data.get("full_name") or user_data.get("name") or "Founder",
+        "name": user_data.get("name") or user_data.get("full_name") or "Founder",
+        "avatar": user_data.get("avatar") or "CO",
+        "avatar_url": user_data.get("avatar_url"),
+        "plan": user_data.get("plan", "pro"),
+        "plan_type": user_data.get("plan_type", "pro"),
+        "credits_total": user_data.get("credits_total", 100),
+        "credits_used": user_data.get("credits_used", 0),
+        "custom_api_keys": user_data.get("custom_api_keys") or user_data.get("custom_keys") or {},
+        "preferences": user_data.get("preferences", {"theme": "dark", "notifications_enabled": True})
+    }
+    if not client:
+        return payload
+    try:
+        res = client.table("users").upsert(payload).execute()
+        if res.data and len(res.data) > 0:
+            return res.data[0]
+        return payload
     except Exception as e:
         logger.error("Supabase upsert_user_profile failed", error=str(e))
-        return None
+        return payload
 
 # ── Analysis Operations ──────────────────────────────────────────────────────
 def sync_analysis_to_supabase(record: Dict[str, Any]) -> bool:

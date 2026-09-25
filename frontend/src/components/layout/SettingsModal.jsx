@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     X, User, Key, Shield, Check, AlertCircle, 
-    Sparkles, Database, ExternalLink, RefreshCw 
+    Sparkles, Database, ExternalLink, RefreshCw, LogOut 
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
@@ -13,7 +13,8 @@ export default function SettingsModal() {
         fetchUserProfile, 
         updateUserProfile, 
         updateApiKeys, 
-        updatePlan 
+        updatePlan,
+        logout 
     } = useStore();
 
     const [activeTab, setActiveTab] = useState('account'); // 'account' | 'keys' | 'subscription'
@@ -176,7 +177,7 @@ export default function SettingsModal() {
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="e.g. Harshad (Founder)"
+                                    placeholder="e.g. Harshad"
                                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                 />
                             </div>
@@ -192,7 +193,7 @@ export default function SettingsModal() {
                                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                                 />
                             </div>
-                            <div className="pt-2">
+                            <div className="pt-4 flex items-center justify-between border-t border-slate-200/80 dark:border-slate-800 mt-5">
                                 <button
                                     type="submit"
                                     disabled={isSaving}
@@ -200,6 +201,14 @@ export default function SettingsModal() {
                                 >
                                     {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                     Save Profile Changes
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={logout}
+                                    className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-500/20 transition-colors flex items-center gap-1.5"
+                                >
+                                    <LogOut className="w-3.5 h-3.5" />
+                                    <span>Sign Out</span>
                                 </button>
                             </div>
                         </form>

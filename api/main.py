@@ -11,7 +11,8 @@ from api.routes import (
     user_router,
     notifications_router,
     share_router,
-    copilot_router
+    copilot_router,
+    auth_router
 )
 
 # Initialize LangSmith / LangChain tracing
@@ -46,6 +47,7 @@ app.include_router(user_router)
 app.include_router(notifications_router)
 app.include_router(share_router)
 app.include_router(copilot_router)
+app.include_router(auth_router)
 
 @app.get("/")
 def read_root():

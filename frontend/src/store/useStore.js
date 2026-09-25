@@ -24,6 +24,18 @@ function applyDarkMode(isDark) {
 }
 
 // Analysis result (session)
+const ANALYSIS_ID_KEY = 'cofound_active_analysis_id';
+function loadActiveAnalysisId() {
+    try { return sessionStorage.getItem(ANALYSIS_ID_KEY) || null; }
+    catch { return null; }
+}
+function persistActiveAnalysisId(id) {
+    try {
+        if (id) sessionStorage.setItem(ANALYSIS_ID_KEY, id);
+        else sessionStorage.removeItem(ANALYSIS_ID_KEY);
+    } catch {}
+}
+
 function loadPersistedResult() {
     try { const r = sessionStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; }
     catch { return null; }
@@ -53,6 +65,46 @@ function loadSavedInsights() {
 function persistSavedInsights(insights) {
     try { localStorage.setItem(INSIGHTS_KEY, JSON.stringify(insights)); }
     catch {}
+}
+
+// User Auth Session (localStorage)
+const AUTH_KEY = 'cofound_auth_session';
+function loadAuthSession() {
+    try {
+        const raw = localStorage.getItem(AUTH_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+function persistAuthSession(session) {
+    try {
+        if (session) localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+        else localStorage.removeItem(AUTH_KEY);
+    } catch {}
+}
+
+const savedSession = loadAuthSession();
+const hasLoggedOut = typeof window !== 'undefined' && localStorage.getItem('cofound_has_logged_out') === 'true';
+
+let initialIsAuth = false;
+let initialUser = null;
+
+if (savedSession && savedSession.id) {
+    initialIsAuth = true;
+    initialUser = savedSession;
+} else if (!hasLoggedOut) {
+    // Default initial experience is Harshad
+    initialIsAuth = true;
+    initialUser = {
+        id: "default_user",
+        name: "Harshad",
+        email: "harshad@cofound.ai",
+        avatar: "HP",
+        plan: "pro",
+        masked_keys: {}
+    };
+    persistAuthSession(initialUser);
 }
 
 // ─── Store ──────────────────────────────────────────────────────────────────
@@ -97,7 +149,7 @@ export const useStore = create((set, get) => ({
     // Active Analysis
     isGenerating: false,
     uploadProgress: 0,
-    currentAnalysisId: null,
+    currentAnalysisId: loadActiveAnalysisId(),
     analysisStatus: "idle",
     analysisResult: loadPersistedResult(),
     agentStatuses: {},
@@ -111,17 +163,31 @@ export const useStore = create((set, get) => ({
             const effectiveTags = customTags || contextTags;
             if (customTags) set({ contextTags: customTags });
             
+            const activeUser = get().user;
+            const effectiveUserId = (activeUser && activeUser.id) ? activeUser.id : 'default_user';
+
             const response = await fetch('/api/analysis/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ raw_text: analysisInput, context_tags: effectiveTags })
+                body: JSON.stringify({ 
+                    raw_text: analysisInput, 
+                    context_tags: effectiveTags,
+                    user_id: effectiveUserId
+                })
             });
-            if (!response.ok) throw new Error("Failed to start analysis");
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                const errMsg = Array.isArray(errData.detail)
+                    ? errData.detail.map(d => d.msg || JSON.stringify(d)).join(", ")
+                    : (typeof errData.detail === 'string' ? errData.detail : "Failed to start analysis");
+                throw new Error(errMsg);
+            }
             const data = await response.json();
+            persistActiveAnalysisId(data.analysis_id);
             set({ currentAnalysisId: data.analysis_id, uploadProgress: 20 });
             return data.analysis_id;
         } catch (error) {
-            console.error(error);
+            console.error("startAnalysis error:", error);
             set({ isGenerating: false, analysisStatus: "failed" });
             throw error;
         }
@@ -131,6 +197,7 @@ export const useStore = create((set, get) => ({
         if (!analysisId) return;
         try {
             const response = await fetch(`/api/analysis/${analysisId}/status`);
+            if (!response.ok) return "error";
             const data = await response.json();
             set({ 
                 agentStatuses: data.agent_statuses || {}, 
@@ -138,16 +205,13 @@ export const useStore = create((set, get) => ({
                 progressPercentage: data.progress_percentage || 0 
             });
             if (data.status === "completed") {
-                const reportRes = await fetch(`/api/analysis/${analysisId}/report`);
-                const reportData = await reportRes.json();
-                persistResult(reportData);
-                set({ analysisResult: reportData, analysisStatus: "completed", isGenerating: false, uploadProgress: 100 });
+                await get().fetchAndSaveReport(analysisId);
                 return "completed";
             } else if (data.status === "failed") {
                 set({ analysisStatus: "failed", isGenerating: false });
                 return "failed";
             } else {
-                set({ uploadProgress: data.progress_percentage || 10 });
+                set({ uploadProgress: Math.max(data.progress_percentage || 10, 10) });
                 return "pending";
             }
         } catch (error) {
@@ -169,29 +233,37 @@ export const useStore = create((set, get) => ({
         set(updates);
     },
 
-    fetchAndSaveReport: async (analysisId) => {
-        try {
-            const reportRes = await fetch(`/api/analysis/${analysisId}/report`);
-            if (!reportRes.ok) throw new Error("Failed to load report");
-            const reportData = await reportRes.json();
-            persistResult(reportData);
-            set({ 
-                analysisResult: reportData, 
-                analysisStatus: "completed", 
-                isGenerating: false, 
-                uploadProgress: 100,
-                progressPercentage: 100
-            });
-            return reportData;
-        } catch (e) {
-            console.error(e);
-            return null;
+    fetchAndSaveReport: async (analysisId, retries = 3) => {
+        for (let attempt = 0; attempt < retries; attempt++) {
+            try {
+                const reportRes = await fetch(`/api/analysis/${analysisId}/report`);
+                if (reportRes.ok) {
+                    const reportData = await reportRes.json();
+                    persistResult(reportData);
+                    persistActiveAnalysisId(null);
+                    set({ 
+                        analysisResult: reportData, 
+                        analysisStatus: "completed", 
+                        isGenerating: false, 
+                        uploadProgress: 100,
+                        progressPercentage: 100
+                    });
+                    return reportData;
+                }
+            } catch (e) {
+                console.error(`Attempt ${attempt + 1} to load report failed:`, e);
+            }
+            if (attempt < retries - 1) {
+                await new Promise(r => setTimeout(r, 800));
+            }
         }
+        return null;
     },
 
     clearAnalysisResult: () => {
         persistResult(null);
-        set({ analysisResult: null, analysisStatus: "idle" });
+        persistActiveAnalysisId(null);
+        set({ analysisResult: null, currentAnalysisId: null, analysisStatus: "idle", isGenerating: false });
     },
 
     // ── Tool Results Cache ─────────────────────────────────────────────────
@@ -215,8 +287,9 @@ export const useStore = create((set, get) => ({
     savedInsights: loadSavedInsights(),
 
     fetchSavedInsights: async () => {
+        const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch('/api/saved-insights?user_id=default_user');
+            const res = await fetch(`/api/saved-insights?user_id=${encodeURIComponent(userId)}`);
             if (res.ok) {
                 const data = await res.json();
                 if (data.insights) {
@@ -238,6 +311,8 @@ export const useStore = create((set, get) => ({
         persistSavedInsights(updated);
         set({ savedInsights: updated });
 
+        const userId = get().user?.id || 'default_user';
+
         // Cloud sync to Supabase
         try {
             await fetch('/api/saved-insights', {
@@ -249,7 +324,7 @@ export const useStore = create((set, get) => ({
                     title: insight.title || 'Saved Insight',
                     content: insight.data || insight.content || {},
                     founder_note: insight.founderNote || null,
-                    user_id: 'default_user'
+                    user_id: userId
                 })
             });
         } catch (e) {
@@ -291,8 +366,9 @@ export const useStore = create((set, get) => ({
     unreadNotificationsCount: 0,
 
     fetchNotifications: async () => {
+        const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch('/api/notifications?user_id=default_user');
+            const res = await fetch(`/api/notifications?user_id=${encodeURIComponent(userId)}`);
             if (res.ok) {
                 const data = await res.json();
                 set({
@@ -306,59 +382,128 @@ export const useStore = create((set, get) => ({
     },
 
     markNotificationRead: async (id) => {
+        const userId = get().user?.id || 'default_user';
         set((state) => {
             const updated = state.notifications.map(n => n.id === id ? { ...n, is_read: true } : n);
             const unread = updated.filter(n => !n.is_read).length;
             return { notifications: updated, unreadNotificationsCount: unread };
         });
         try {
-            await fetch(`/api/notifications/${id}/read?user_id=default_user`, { method: 'POST' });
+            await fetch(`/api/notifications/${id}/read?user_id=${encodeURIComponent(userId)}`, { method: 'POST' });
         } catch (e) {
             console.error(e);
         }
     },
 
     markAllNotificationsRead: async () => {
+        const userId = get().user?.id || 'default_user';
         set((state) => ({
             notifications: state.notifications.map(n => ({ ...n, is_read: true })),
             unreadNotificationsCount: 0
         }));
         try {
-            await fetch('/api/notifications/read-all?user_id=default_user', { method: 'POST' });
+            await fetch(`/api/notifications/read-all?user_id=${encodeURIComponent(userId)}`, { method: 'POST' });
         } catch (e) {
             console.error(e);
         }
     },
 
-    // ── User Profile & Settings (Supabase Cloud) ────────────────────────────
-    user: {
-        id: "default_user",
-        name: "Harshad",
-        email: "harshad@cofound.ai",
-        avatar: "HP",
-        plan: "pro",
-        masked_keys: {}
+    // ── User Authentication & Profile (Supabase Cloud) ──────────────────────
+    user: initialUser,
+    isAuthenticated: initialIsAuth,
+
+    authModalOpen: false,
+    openAuthModal: () => set({ authModalOpen: true }),
+    closeAuthModal: () => set({ authModalOpen: false }),
+
+    login: async (email, name) => {
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, name })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const u = data.user;
+                const formattedUser = {
+                    id: u.id,
+                    name: u.full_name || u.name || "Founder",
+                    email: u.email,
+                    avatar: u.avatar || (u.full_name ? u.full_name.slice(0, 2).toUpperCase() : "HP"),
+                    plan: u.plan || "pro",
+                    masked_keys: u.masked_keys || {},
+                    has_custom_keys: u.has_custom_keys || false
+                };
+                persistAuthSession(formattedUser);
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('cofound_has_logged_out');
+                }
+                set({
+                    user: formattedUser,
+                    isAuthenticated: true,
+                    authModalOpen: false
+                });
+                get().fetchNotifications();
+                get().fetchSavedInsights();
+                return { success: true, user: formattedUser, message: data.message };
+            } else {
+                const err = await res.json();
+                return { success: false, message: err.detail || "Authentication failed." };
+            }
+        } catch (e) {
+            console.error("Login request error:", e);
+            return { success: false, message: "Network connection error during sign in." };
+        }
     },
+
+    logout: async () => {
+        try {
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch {}
+        persistAuthSession(null);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('cofound_has_logged_out', 'true');
+        }
+        set({
+            user: null,
+            isAuthenticated: false,
+            settingsOpen: false,
+            notifications: [],
+            unreadNotificationsCount: 0
+        });
+    },
+
     settingsOpen: false,
     openSettings: () => set({ settingsOpen: true }),
     closeSettings: () => set({ settingsOpen: false }),
 
     fetchUserProfile: async () => {
+        const currentUser = get().user;
+        const userId = currentUser?.id;
+        if (!userId) return;
         try {
-            const res = await fetch('/api/user/profile?user_id=default_user');
+            const res = await fetch(`/api/user/profile?user_id=${encodeURIComponent(userId)}`);
             if (res.ok) {
                 const data = await res.json();
-                set({
-                    user: {
-                        id: data.id,
-                        name: data.full_name || "Harshad (Founder)",
-                        email: data.email || "harshad@cofound.ai",
-                        avatar: (data.full_name ? data.full_name.slice(0, 2).toUpperCase() : "HP"),
-                        plan: data.plan || "pro",
-                        masked_keys: data.masked_keys || {},
-                        has_custom_keys: data.has_custom_keys || false
-                    }
-                });
+                const isDefault = data.id === 'default_user' || userId === 'default_user';
+                const defaultName = isDefault ? "Harshad" : (currentUser.name || "Founder");
+                const defaultEmail = isDefault ? "harshad@cofound.ai" : (currentUser.email || "");
+                const name = data.full_name || currentUser.name || defaultName;
+                const email = data.email || currentUser.email || defaultEmail;
+                const avatar = (data.full_name ? data.full_name.slice(0, 2).toUpperCase() : (currentUser.avatar || "CO"));
+                
+                const u = {
+                    id: data.id || userId,
+                    name: name,
+                    email: email,
+                    avatar: avatar,
+                    plan: data.plan || currentUser.plan || "pro",
+                    masked_keys: data.masked_keys || currentUser.masked_keys || {},
+                    has_custom_keys: data.has_custom_keys ?? currentUser.has_custom_keys ?? false
+                };
+                persistAuthSession(u);
+                set({ user: u, isAuthenticated: true });
             }
         } catch (e) {
             console.error("Fetch user profile failed:", e);
@@ -366,8 +511,9 @@ export const useStore = create((set, get) => ({
     },
 
     updateUserProfile: async (payload) => {
+        const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch('/api/user/profile?user_id=default_user', {
+            const res = await fetch(`/api/user/profile?user_id=${encodeURIComponent(userId)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -383,8 +529,9 @@ export const useStore = create((set, get) => ({
     },
 
     updateApiKeys: async (keys) => {
+        const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch('/api/user/api-keys?user_id=default_user', {
+            const res = await fetch(`/api/user/api-keys?user_id=${encodeURIComponent(userId)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(keys)
@@ -400,8 +547,9 @@ export const useStore = create((set, get) => ({
     },
 
     updatePlan: async (plan) => {
+        const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch('/api/user/plan?user_id=default_user', {
+            const res = await fetch(`/api/user/plan?user_id=${encodeURIComponent(userId)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ plan })

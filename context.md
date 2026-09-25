@@ -194,6 +194,7 @@
 |---|---|---|---|
 | **P1** | **API Modularization** | Move routes from `api/main.py` into dedicated routers under `api/routes/` (`analysis.py`, `tools.py`). | **Completed** |
 | **P2** | **Search Query Caching** | Implement cache layer (Redis or SQLite cache) for web search results to avoid repeated Tavily credit usage. | **Completed** |
+| **P1** | **Auth & Session Persistence** | Multi-user login/registration via Supabase, session persistence, and isolated analysis execution. | **Completed** |
 | **P3** | **Vector Memory** | Connect Qdrant or local vector store in `data/memory/` for empirical startup failure/success patterns. | Planned |
 | **P4** | **Google Trends Quantitative Scraper** | Fetch quantitative time-series data for interest-over-time graphs. | Planned |
 | **P5** | **Multi-Idea Portfolio Comparison** | Batch test and rank 3-5 startup ideas simultaneously in a comparison matrix. | Roadmap |

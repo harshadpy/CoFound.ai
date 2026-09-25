@@ -33,11 +33,20 @@ def get_profile(user_id: str = "default_user"):
     """Fetches user profile and configured key status from Supabase."""
     profile = get_user_profile(user_id)
     if not profile:
-        # Default fallback structure
+        if user_id == "default_user":
+            return {
+                "id": "default_user",
+                "email": "harshad@cofound.ai",
+                "full_name": "Harshad",
+                "plan": "pro",
+                "avatar_url": None,
+                "has_custom_keys": False,
+                "masked_keys": {}
+            }
         return {
             "id": user_id,
-            "email": "harshad@cofound.ai",
-            "full_name": "Harshad (Founder)",
+            "email": None,
+            "full_name": None,
             "plan": "pro",
             "avatar_url": None,
             "has_custom_keys": False,

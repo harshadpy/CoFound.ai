@@ -16,8 +16,10 @@ from api.routes.user import router as user_router
 from api.routes.notifications import router as notifications_router
 from api.routes.share import router as share_router
 from api.routes.copilot import router as copilot_router
+from api.routes.auth import router as auth_router
 
 __all__ = [
+    "auth_router",
     "analysis_router",
     "tools_router",
     "insights_router",

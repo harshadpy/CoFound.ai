@@ -31,7 +31,7 @@ class TestSupabaseIntegration(unittest.TestCase):
 
         # 2. Update profile
         update_res = self.client.put("/api/user/profile?user_id=default_user", json={
-            "full_name": "Harshad (Lead Architect)",
+            "full_name": "Harshad",
             "preferences": {"notifications_enabled": True, "theme": "dark"}
         })
         self.assertEqual(update_res.status_code, 200)

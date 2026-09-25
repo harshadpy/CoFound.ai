@@ -14,6 +14,7 @@ import {
     Zap,
     ChevronRight,
     LogOut,
+    LogIn,
     User,
     CreditCard,
     Bell,
@@ -86,7 +87,10 @@ export function Sidebar() {
         toolResults = {},
         openSettings,
         fetchUserProfile,
-        fetchSavedInsights
+        fetchSavedInsights,
+        isAuthenticated,
+        openAuthModal,
+        logout
     } = useStore();
     const navigate = useNavigate();
 
@@ -336,35 +340,84 @@ export function Sidebar() {
                     </div>
                 )}
 
-                {/* User card — click opens full Supabase Cloud settings */}
-                {!collapsed ? (
-                    <div
-                        className="flex items-center gap-3 px-3 py-2 rounded-xl bg-muted cursor-pointer hover:bg-secondary transition-colors"
-                        onClick={openSettings}
-                        title="Click to open Cloud Account & API Keys Settings"
-                    >
-                        <div className="relative shrink-0">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm">
-                                {user.avatar || 'HP'}
+                {/* User card or Sign In button based on authentication state */}
+                {isAuthenticated && user ? (
+                    !collapsed ? (
+                        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted group transition-colors">
+                            <div 
+                                className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer"
+                                onClick={openSettings}
+                                title="Click to open Cloud Account & Settings"
+                            >
+                                <div className="relative shrink-0">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                                        {user.avatar || 'HP'}
+                                    </div>
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-card" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-foreground truncate leading-tight">{user.name}</p>
+                                    <p className="text-[10px] text-muted-foreground truncate uppercase font-mono font-medium text-indigo-600 dark:text-indigo-400">
+                                        {user.plan || 'PRO'} PLAN
+                                    </p>
+                                </div>
                             </div>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-card" />
+                            <div className="flex items-center gap-0.5 shrink-0">
+                                <button
+                                    onClick={openSettings}
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors focus-visible:ring-1 focus-visible:ring-ring"
+                                    title="Settings"
+                                    aria-label="Settings"
+                                >
+                                    <Settings className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    onClick={logout}
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-visible:ring-1 focus-visible:ring-rose-500"
+                                    title="Log Out"
+                                    aria-label="Log Out"
+                                >
+                                    <LogOut className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate leading-tight">{user.name}</p>
-                            <p className="text-[11px] text-muted-foreground truncate uppercase font-mono font-medium text-indigo-600 dark:text-indigo-400">
-                                {user.plan || 'PRO'} PLAN
-                            </p>
+                    ) : (
+                        <div className="flex flex-col items-center gap-1.5">
+                            <button
+                                onClick={openSettings}
+                                className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm"
+                                title="Open Cloud Settings"
+                            >
+                                {user.avatar || 'HP'}
+                            </button>
+                            <button
+                                onClick={logout}
+                                className="p-1 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-muted transition-colors"
+                                title="Log Out"
+                                aria-label="Log Out"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                            </button>
                         </div>
-                        <Settings className="w-3.5 h-3.5 text-muted-foreground shrink-0 hover:text-foreground transition-colors" aria-label="Settings" />
-                    </div>
+                    )
                 ) : (
-                    <button
-                        onClick={openSettings}
-                        className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm"
-                        title="Open Cloud Settings"
-                    >
-                        {user.avatar || 'HP'}
-                    </button>
+                    !collapsed ? (
+                        <button
+                            onClick={openAuthModal}
+                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold text-xs shadow-sm hover:shadow transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        >
+                            <LogIn className="w-3.5 h-3.5" />
+                            <span>Sign In / Register</span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={openAuthModal}
+                            className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                            title="Sign In to CoFound"
+                        >
+                            <LogIn className="w-4 h-4" />
+                        </button>
+                    )
                 )}
             </div>
         </aside>

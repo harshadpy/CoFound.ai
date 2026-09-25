@@ -19,6 +19,7 @@ import SharedReport from './pages/SharedReport';
 
 // Global Modals & Drawers
 import SettingsModal from './components/layout/SettingsModal';
+import AuthModal from './components/layout/AuthModal';
 import CopilotDrawer from './components/layout/CopilotDrawer';
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
         </Layout>
         {/* Global Modals */}
         <SettingsModal />
+        <AuthModal />
         <CopilotDrawer />
       </BrowserRouter>
     </ToastProvider>

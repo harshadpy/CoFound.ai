@@ -130,11 +130,20 @@ def save_analysis_result(analysis_id: str, result: Dict[str, Any]) -> Optional[D
 
 def update_agent_progress(
     analysis_id: str,
-    node_name: str,
-    node_status: str = "completed",
-    metric_label: Optional[str] = None
+    node_name: Optional[str] = None,
+    node_status: Optional[str] = None,
+    metric_label: Optional[str] = None,
+    agent_name: Optional[str] = None,
+    status: Optional[str] = None,
+    metric: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
     """Updates an individual agent's execution status and recalculates total progress."""
+    target_node = node_name or agent_name
+    if not target_node:
+        return None
+    target_status = node_status or status or "completed"
+    target_metric = metric_label or metric
+
     session = SessionLocal()
     try:
         record = session.query(AnalysisRecord).filter(AnalysisRecord.id == analysis_id).first()
@@ -142,12 +151,12 @@ def update_agent_progress(
             return None
         
         statuses = dict(record.agent_statuses or DEFAULT_AGENT_STATUSES)
-        statuses[node_name] = node_status
+        statuses[target_node] = target_status
         record.agent_statuses = statuses
 
-        if metric_label:
+        if target_metric:
             metrics = dict(record.agent_metrics or {})
-            metrics[node_name] = metric_label
+            metrics[target_node] = target_metric
             record.agent_metrics = metrics
 
         total_nodes = len(DEFAULT_AGENT_STATUSES)

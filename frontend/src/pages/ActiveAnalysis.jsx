@@ -53,8 +53,15 @@ export default function ActiveAnalysis() {
             isClosed = true;
             if (eventSource) eventSource.close();
             if (fallbackInterval) clearInterval(fallbackInterval);
-            await fetchAndSaveReport(currentAnalysisId);
-            setTimeout(() => navigate('/report'), 600);
+            const rep = await fetchAndSaveReport(currentAnalysisId);
+            if (rep) {
+                setTimeout(() => navigate('/report'), 500);
+            } else {
+                setTimeout(async () => {
+                    await fetchAndSaveReport(currentAnalysisId);
+                    navigate('/report');
+                }, 1200);
+            }
         };
 
         // Try Server-Sent Events for zero-latency live telemetry
