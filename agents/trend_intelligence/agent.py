@@ -27,23 +27,38 @@ def trend_node(state: AgentState) -> dict:
     parser = JsonOutputParser(pydantic_object=TrendOutput)
     
     logger.info("trend_analysis_started")
-    structured = state["structured_thought"]
-    core_idea = structured.get("core_idea")
-    sector = structured.get("primary_sector")
+    structured = state.get("structured_thought", {})
+    core_idea = structured.get("core_idea", state.get("raw_text", ""))
+    sector = structured.get("primary_sector", "Technology")
+    
+    geo_tags = state.get("context_tags", {}).get("geo", [])
+    geography = structured.get("target_geography")
+    if geo_tags and (not geography or geography.lower() == "global"):
+        geography = ", ".join(geo_tags)
+    elif not geography:
+        geography = "Global"
 
     # Step 1: Generate Search Queries
+    geo_hint = f" The focus is on the {geography} market." if geography and geography.lower() != "global" else ""
     query_prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a Trends Analyst. Generate 3 specific search queries to find emerging trends and CAGR for this sector."),
-        ("user", "Sector: {sector}\nIdea: {core_idea}")
+        ("system", f"You are a Trends Analyst. Generate 3 specific search queries to find emerging trends and CAGR for this sector.{geo_hint}"),
+        ("user", "Sector: {sector}\nIdea: {core_idea}\nTarget Market: {geography}")
     ])
     
     query_chain = query_prompt | model
-    queries_response = query_chain.invoke({"core_idea": core_idea, "sector": sector}).content
-    queries = [q.strip() for q in queries_response.split('\n') if q.strip() and not q.strip().startswith(('Here', 'Sure', '1.', '-'))][:3]
+    queries_response = query_chain.invoke({"core_idea": core_idea, "sector": sector, "geography": geography}).content
+    queries = [
+        q.strip().lstrip("1234567890.- ")
+        for q in queries_response.splitlines()
+        if q.strip() and not q.strip().lower().startswith(('here', 'sure', 'queries:'))
+    ][:3]
     if not queries:
-        queries = [f"{sector} market trends 2025", f"{sector} market growth CAGR", f"emerging tech in {sector}"]
+        if geography and geography.lower() != "global":
+            queries = [f"{sector} market trends in {geography} 2025", f"{sector} market growth CAGR {geography}", f"emerging tech in {sector} {geography}"]
+        else:
+            queries = [f"{sector} market trends 2025", f"{sector} market growth CAGR", f"emerging tech in {sector}"]
 
-    logger.info("generated_queries", queries=queries)
+    logger.info("generated_queries", queries=queries, geography=geography)
 
     # Step 2: Execute Search
     search_results = []

@@ -17,15 +17,15 @@ def synthesis_node(state: AgentState) -> dict:
     model = ChatOpenAI(model=settings.model_fast, api_key=settings.openai_api_key)
     parser = JsonOutputParser(pydantic_object=SynthesisOutput)
 
-    # Aggregate all previous results
+    # Aggregate parallel research findings
     findings = {
+        "structured_thought": state.get("structured_thought"),
         "ideation": state.get("ideation_results"),
         "similarity": state.get("similarity_results"),
         "validation": state.get("validation_results"),
         "trend": state.get("trend_results"),
         "competitor": state.get("competitor_results"),
-        "feasibility": state.get("feasibility_results"),
-        "critic": state.get("critic_results")
+        "feasibility": state.get("feasibility_results")
     }
 
     prompt = ChatPromptTemplate.from_messages([

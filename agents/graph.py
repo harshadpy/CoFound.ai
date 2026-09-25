@@ -18,40 +18,47 @@ from agents.report_generation.agent import report_node
 def create_workflow():
     workflow = StateGraph(AgentState)
     
-    # Add nodes
+    # Phase 1: Entry & Structuring
     workflow.add_node("structure", thought_structuring_node)
     
-    # Parallel branch nodes
+    # Phase 2: Parallel Research Nodes (isolated, no cross-talk)
     workflow.add_node("ideation", ideation_node)
     workflow.add_node("similarity", similarity_node)
     workflow.add_node("validation", validation_node)
     workflow.add_node("trend", trend_node)
     workflow.add_node("competitor", competitor_node)
     workflow.add_node("feasibility", feasibility_node)
+    
+    # Phase 3: Synthesis (First merge point)
+    workflow.add_node("synthesis", synthesis_node)
+    
+    # Phase 4: Adversarial Guardrail (Critic runs strictly after synthesis & research)
     workflow.add_node("critic", critic_node)
     
-    # Synthesis & Decision
-    workflow.add_node("synthesis", synthesis_node)
+    # Phase 5: Final Decision (Authority)
     workflow.add_node("decision", decision_node)
+    
+    # Phase 6: Report Generation
     workflow.add_node("report", report_node)
     
-    # Define edges
+    # ─── Edges ────────────────────────────────────────────────────────
     # Start -> Structure
     workflow.set_entry_point("structure")
     
-    # Structure -> Parallel Nodes
-    # We fan out to all analysis nodes
-    parallel_nodes = ["ideation", "similarity", "validation", "trend", "competitor", "feasibility", "critic"]
-    for node in parallel_nodes:
+    # Structure -> 6 Parallel Research Nodes
+    research_nodes = ["ideation", "similarity", "validation", "trend", "competitor", "feasibility"]
+    for node in research_nodes:
         workflow.add_edge("structure", node)
     
-    # Parallel Nodes -> Synthesis
-    # All analysis nodes must finish before synthesis
-    for node in parallel_nodes:
+    # 6 Parallel Research Nodes -> Synthesis
+    for node in research_nodes:
         workflow.add_edge(node, "synthesis")
         
-    # Synthesis -> Decision
-    workflow.add_edge("synthesis", "decision")
+    # Synthesis -> Adversarial Critic (Phase 4 Guardrail)
+    workflow.add_edge("synthesis", "critic")
+    
+    # Critic -> Decision (Phase 5 Authority)
+    workflow.add_edge("critic", "decision")
     
     # Decision -> Report
     workflow.add_edge("decision", "report")

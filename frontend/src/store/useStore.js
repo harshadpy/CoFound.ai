@@ -61,6 +61,15 @@ export const useStore = create((set, get) => ({
     // UX State
     sidebarCollapsed: false,
     toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+    // Mobile drawer
+    sidebarOpen: false,
+    toggleSidebarOpen: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+    closeSidebar: () => set({ sidebarOpen: false }),
+
+    // How to Use Guide Modal
+    howToUseOpen: false,
+    openHowToUse: () => set({ howToUseOpen: true }),
+    closeHowToUse: () => set({ howToUseOpen: false }),
 
     // Dark Mode
     isDark: loadDarkMode(),
@@ -75,11 +84,14 @@ export const useStore = create((set, get) => ({
     setAnalysisInput: (input) => set({ analysisInput: input }),
 
     contextTags: { industry: [], geo: [], segment: [] },
+    setContextTags: (tags) => set((state) => ({
+        contextTags: { ...state.contextTags, ...tags }
+    })),
     addTag: (category, tag) => set((state) => ({
-        contextTags: { ...state.contextTags, [category]: [...state.contextTags[category], tag] }
+        contextTags: { ...state.contextTags, [category]: [...(state.contextTags[category] || []), tag] }
     })),
     removeTag: (category, tag) => set((state) => ({
-        contextTags: { ...state.contextTags, [category]: state.contextTags[category].filter(t => t !== tag) }
+        contextTags: { ...state.contextTags, [category]: (state.contextTags[category] || []).filter(t => t !== tag) }
     })),
 
     // Active Analysis
@@ -92,14 +104,17 @@ export const useStore = create((set, get) => ({
     agentMetrics: {},
     progressPercentage: 0,
 
-    startAnalysis: async () => {
+    startAnalysis: async (customTags = null) => {
         set({ isGenerating: true, uploadProgress: 10, analysisStatus: "pending" });
         try {
             const { analysisInput, contextTags } = get();
+            const effectiveTags = customTags || contextTags;
+            if (customTags) set({ contextTags: customTags });
+            
             const response = await fetch('/api/analysis/start', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ raw_text: analysisInput, context_tags: contextTags })
+                body: JSON.stringify({ raw_text: analysisInput, context_tags: effectiveTags })
             });
             if (!response.ok) throw new Error("Failed to start analysis");
             const data = await response.json();
@@ -117,13 +132,16 @@ export const useStore = create((set, get) => ({
         try {
             const response = await fetch(`/api/analysis/${analysisId}/status`);
             const data = await response.json();
-            set({ agentStatuses: data.agent_statuses || {}, progressPercentage: data.progress_percentage || 0 });
+            set({ 
+                agentStatuses: data.agent_statuses || {}, 
+                agentMetrics: data.agent_metrics || {},
+                progressPercentage: data.progress_percentage || 0 
+            });
             if (data.status === "completed") {
-                set({ analysisStatus: "completed", isGenerating: false, uploadProgress: 100 });
                 const reportRes = await fetch(`/api/analysis/${analysisId}/report`);
                 const reportData = await reportRes.json();
                 persistResult(reportData);
-                set({ analysisResult: reportData });
+                set({ analysisResult: reportData, analysisStatus: "completed", isGenerating: false, uploadProgress: 100 });
                 return "completed";
             } else if (data.status === "failed") {
                 set({ analysisStatus: "failed", isGenerating: false });
@@ -135,6 +153,39 @@ export const useStore = create((set, get) => ({
         } catch (error) {
             console.error(error);
             return "error";
+        }
+    },
+
+    applyStreamUpdate: (data) => {
+        if (!data) return;
+        const updates = {};
+        if (data.agent_statuses) updates.agentStatuses = data.agent_statuses;
+        if (data.agent_metrics) updates.agentMetrics = data.agent_metrics;
+        if (typeof data.progress_percentage === 'number') {
+            updates.progressPercentage = data.progress_percentage;
+            updates.uploadProgress = data.progress_percentage;
+        }
+        if (data.status) updates.analysisStatus = data.status;
+        set(updates);
+    },
+
+    fetchAndSaveReport: async (analysisId) => {
+        try {
+            const reportRes = await fetch(`/api/analysis/${analysisId}/report`);
+            if (!reportRes.ok) throw new Error("Failed to load report");
+            const reportData = await reportRes.json();
+            persistResult(reportData);
+            set({ 
+                analysisResult: reportData, 
+                analysisStatus: "completed", 
+                isGenerating: false, 
+                uploadProgress: 100,
+                progressPercentage: 100
+            });
+            return reportData;
+        } catch (e) {
+            console.error(e);
+            return null;
         }
     },
 
@@ -160,32 +211,284 @@ export const useStore = create((set, get) => ({
         set({ toolResults: updated });
     },
 
-    // ── Saved Insights ─────────────────────────────────────────────────────
+    // ── Saved Insights (Dual-layer: Supabase Cloud + Local Cache) ───────────
     savedInsights: loadSavedInsights(),
 
-    saveInsight: (insight) => {
-        // insight: { id, type, title, query, data, savedAt }
+    fetchSavedInsights: async () => {
+        try {
+            const res = await fetch('/api/saved-insights?user_id=default_user');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.insights) {
+                    persistSavedInsights(data.insights);
+                    set({ savedInsights: data.insights });
+                }
+            }
+        } catch (e) {
+            console.warn("Using local cached saved insights:", e);
+        }
+    },
+
+    saveInsight: async (insight) => {
         const existing = get().savedInsights;
-        // avoid exact duplicate (same type + query)
-        const isDup = existing.some(i => i.type === insight.type && i.query === insight.query);
+        const isDup = existing.some(i => i.id === insight.id || (i.type === insight.type && i.query === insight.query && insight.query));
         if (isDup) return false;
+
         const updated = [insight, ...existing];
         persistSavedInsights(updated);
         set({ savedInsights: updated });
+
+        // Cloud sync to Supabase
+        try {
+            await fetch('/api/saved-insights', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: insight.id || `insight-${Date.now()}`,
+                    type: insight.type || 'insight',
+                    title: insight.title || 'Saved Insight',
+                    content: insight.data || insight.content || {},
+                    founder_note: insight.founderNote || null,
+                    user_id: 'default_user'
+                })
+            });
+        } catch (e) {
+            console.error("Supabase insight save error:", e);
+        }
         return true;
     },
 
-    removeInsight: (id) => {
+    removeInsight: async (id) => {
         const updated = get().savedInsights.filter(i => i.id !== id);
         persistSavedInsights(updated);
         set({ savedInsights: updated });
+
+        try {
+            await fetch(`/api/saved-insights/${id}`, { method: 'DELETE' });
+        } catch (e) {
+            console.error("Supabase insight delete error:", e);
+        }
     },
 
-    // User State (Mock)
+    updateInsightNote: async (id, note) => {
+        const updated = get().savedInsights.map(i => i.id === id ? { ...i, founderNote: note } : i);
+        persistSavedInsights(updated);
+        set({ savedInsights: updated });
+
+        try {
+            await fetch(`/api/saved-insights/${id}/note`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ founder_note: note })
+            });
+        } catch (e) {
+            console.error("Supabase insight note update error:", e);
+        }
+    },
+
+    // ── Notifications (Supabase Cloud) ──────────────────────────────────────
+    notifications: [],
+    unreadNotificationsCount: 0,
+
+    fetchNotifications: async () => {
+        try {
+            const res = await fetch('/api/notifications?user_id=default_user');
+            if (res.ok) {
+                const data = await res.json();
+                set({
+                    notifications: data.notifications || [],
+                    unreadNotificationsCount: data.unread_count || 0
+                });
+            }
+        } catch (e) {
+            console.error("Fetch notifications failed:", e);
+        }
+    },
+
+    markNotificationRead: async (id) => {
+        set((state) => {
+            const updated = state.notifications.map(n => n.id === id ? { ...n, is_read: true } : n);
+            const unread = updated.filter(n => !n.is_read).length;
+            return { notifications: updated, unreadNotificationsCount: unread };
+        });
+        try {
+            await fetch(`/api/notifications/${id}/read?user_id=default_user`, { method: 'POST' });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    markAllNotificationsRead: async () => {
+        set((state) => ({
+            notifications: state.notifications.map(n => ({ ...n, is_read: true })),
+            unreadNotificationsCount: 0
+        }));
+        try {
+            await fetch('/api/notifications/read-all?user_id=default_user', { method: 'POST' });
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    // ── User Profile & Settings (Supabase Cloud) ────────────────────────────
     user: {
+        id: "default_user",
         name: "Harshad",
-        email: "alex@cofound.ai",
-        avatar: "AH",
-        plan: "Pro"
+        email: "harshad@cofound.ai",
+        avatar: "HP",
+        plan: "pro",
+        masked_keys: {}
+    },
+    settingsOpen: false,
+    openSettings: () => set({ settingsOpen: true }),
+    closeSettings: () => set({ settingsOpen: false }),
+
+    fetchUserProfile: async () => {
+        try {
+            const res = await fetch('/api/user/profile?user_id=default_user');
+            if (res.ok) {
+                const data = await res.json();
+                set({
+                    user: {
+                        id: data.id,
+                        name: data.full_name || "Harshad (Founder)",
+                        email: data.email || "harshad@cofound.ai",
+                        avatar: (data.full_name ? data.full_name.slice(0, 2).toUpperCase() : "HP"),
+                        plan: data.plan || "pro",
+                        masked_keys: data.masked_keys || {},
+                        has_custom_keys: data.has_custom_keys || false
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Fetch user profile failed:", e);
+        }
+    },
+
+    updateUserProfile: async (payload) => {
+        try {
+            const res = await fetch('/api/user/profile?user_id=default_user', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                await get().fetchUserProfile();
+                return true;
+            }
+        } catch (e) {
+            console.error("Update profile failed:", e);
+        }
+        return false;
+    },
+
+    updateApiKeys: async (keys) => {
+        try {
+            const res = await fetch('/api/user/api-keys?user_id=default_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(keys)
+            });
+            if (res.ok) {
+                await get().fetchUserProfile();
+                return true;
+            }
+        } catch (e) {
+            console.error("Update API keys failed:", e);
+        }
+        return false;
+    },
+
+    updatePlan: async (plan) => {
+        try {
+            const res = await fetch('/api/user/plan?user_id=default_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan })
+            });
+            if (res.ok) {
+                await get().fetchUserProfile();
+                return true;
+            }
+        } catch (e) {
+            console.error("Update plan failed:", e);
+        }
+        return false;
+    },
+
+    // ── AI Strategic Copilot ────────────────────────────────────────────────
+    copilotOpen: false,
+    openCopilot: () => set({ copilotOpen: true }),
+    closeCopilot: () => set({ copilotOpen: false }),
+    copilotMessages: [
+        {
+            role: 'assistant',
+            content: "Hello Harshad! I am your **Executive Strategic Copilot**. Grounded directly on your market analyses, competitive landscapes, and risk teardowns, I'm here to help you pressure-test your strategy, pricing, and go-to-market execution. What's on your mind today?"
+        }
+    ],
+    copilotLoading: false,
+    suggestedFollowups: [
+        "How can we build a defensive moat against incumbents?",
+        "What is the leanest MVP to test customer willingness to pay?",
+        "How should we pitch our pricing model to early adopters?"
+    ],
+
+    sendCopilotMessage: async (text, analysisId = null) => {
+        const currentMessages = get().copilotMessages;
+        const newHistory = [...currentMessages, { role: 'user', content: text }];
+        set({ copilotMessages: newHistory, copilotLoading: true });
+
+        try {
+            const res = await fetch('/api/copilot/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: text,
+                    analysis_id: analysisId || get().currentAnalysisId,
+                    conversation_history: newHistory,
+                    user_id: 'default_user'
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                set({
+                    copilotMessages: [...newHistory, { role: 'assistant', content: data.reply }],
+                    suggestedFollowups: data.suggested_followups || get().suggestedFollowups,
+                    copilotLoading: false
+                });
+            } else {
+                throw new Error("Copilot response error");
+            }
+        } catch (e) {
+            console.error("Copilot request error:", e);
+            set({
+                copilotMessages: [
+                    ...newHistory,
+                    {
+                        role: 'assistant',
+                        content: "I ran into a temporary hiccup communicating with the model, but my core advice remains: focus first on validating customer willingness to pay before investing heavily in engineering."
+                    }
+                ],
+                copilotLoading: false
+            });
+        }
+    },
+
+    // ── Share Permalinks (Supabase Cloud) ───────────────────────────────────
+    shareReport: async (analysisId, title) => {
+        try {
+            const res = await fetch(`/api/analysis/${analysisId}/share`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title })
+            });
+            if (res.ok) {
+                return await res.json();
+            }
+        } catch (e) {
+            console.error("Failed to share report:", e);
+        }
+        return null;
     }
 }))
