@@ -24,8 +24,13 @@
   <img src="https://img.shields.io/badge/Tavily%20AI-FF6B00?style=flat-square" alt="tavily"/>
 </p>
 
+<p align="center">
+  <img src="docs/screenshots/01-hero-landing.png" alt="CoFound.ai Hero Landing Interface" width="100%"/>
+</p>
+
 <p>
   <a href="#-overview">Overview</a> •
+  <a href="#-visual-tour--screenshots">Visual Tour</a> •
   <a href="#-key-features">Key Features</a> •
   <a href="#-the-11-agent-swarm">The 11-Agent Swarm</a> •
   <a href="#-architecture">Architecture</a> •
@@ -51,6 +56,98 @@
 **CoFound.ai** is an agentic venture evaluation platform that acts as your AI Co-Founder. Drop in a raw, napkin-sketch startup concept and **11 specialized agentic workers** orchestrate in parallel — scraping the live web, quantifying total addressable markets (TAM), mapping competitor moats, validating customer willingness-to-pay, and running adversarial red-team critique.
 
 Within minutes, CoFound.ai delivers an institutional-grade **Go / Pivot / Kill** verdict backed by unit economics, fatal risk analysis, and actionable next steps.
+
+---
+
+## 📸 Visual Tour & System Screenshots
+
+Explore the complete CoFound.ai platform — from initial concept intake to real-time multi-agent swarm execution, institutional dossier synthesis, and deep quantitative diligence tooling.
+
+### 1. Interactive 3D Hero & Hypothesis Workbench
+Drop in napkin-sketch ideas with instant industry, geography, and target customer tags. Features a dynamic ambient Three.js parallax starfield.
+<p align="center">
+  <img src="docs/screenshots/01-hero-landing.png" alt="CoFound.ai Interactive Hero & Workbench" width="100%"/>
+</p>
+
+---
+
+### 2. Autonomous 11-Agent Swarm in Execution
+Watch the 11 specialized agent workers investigate across live web intelligence, technical feasibility, and TAM modeling in parallel with real-time SSE streaming telemetry.
+<p align="center">
+  <img src="docs/screenshots/02-active-swarm-execution.png" alt="Autonomous 11-Agent Swarm in Execution" width="100%"/>
+</p>
+
+---
+
+### 3. Institutional Market Intelligence Dossier
+Definitive **Go / Pivot / Kill** decision authority with numeric confidence scores, survival probability, strategic reasoning, and structured 5-stage milestone next steps.
+<p align="center">
+  <img src="docs/screenshots/03-executive-dossier-report.png" alt="Institutional Market Intelligence Report" width="100%"/>
+</p>
+
+---
+
+### 4. Financial Unit Economics & Quantitative Sizing
+Automated parsing of unstructured market research into concrete financial indicators: Market Saturation, TAM sizing, projected CAGR rates, user demand signals, and feasibility indices.
+<p align="center">
+  <img src="docs/screenshots/04-key-metrics.png" alt="Key Metrics & Financials" width="100%"/>
+</p>
+
+---
+
+### 5. Competitor Dynamics & Saturation Matrix
+Real-time competitor mapping with 10-tier Saturation Scores, funding badges, verified web domains, team estimates, and direct strengths vs. vulnerability breakdowns.
+<p align="center">
+  <img src="docs/screenshots/05-competitor-matrix.png" alt="Competitor Dynamics & Saturation Matrix" width="100%"/>
+</p>
+
+---
+
+### 6. Quantitative Trend Explorer (`/trends`)
+Institutional quantitative market parser breaking down narrative web data into headline figures (`$202.9M TAM`, `25.8% - 54.7% CAGR`), subsector growth dynamics, and core growth catalysts.
+<p align="center">
+  <img src="docs/screenshots/06-trend-explorer.png" alt="Quantitative Trend Explorer" width="100%"/>
+</p>
+
+---
+
+### 7. Customer Friction Signals & Willingness to Pay (`/market-gaps`)
+Surfaces verified voice-of-customer pain points, sentiment meters, and customer Willingness to Pay (WTP) extracted directly from forum discussions, complaints, and user reviews.
+<p align="center">
+  <img src="docs/screenshots/07-market-gaps.png" alt="Market Gaps & Customer Validation" width="100%"/>
+</p>
+
+---
+
+### 8. Idea Brainstorming, Wedges & Contrarian Pivots (`/brainstorm`)
+AI-driven concept expansion featuring initial wedge formulation, monetization structures, and contrarian pivot architectures to de-risk red-ocean ideas.
+<p align="center">
+  <img src="docs/screenshots/08-idea-brainstorming.png" alt="Idea Brainstorming & Wedges" width="100%"/>
+</p>
+
+---
+
+### 9. Curated Problem & Hypothesis Library (`/ideas`)
+Pre-validated problem statements across B2B SaaS, FinTech, HealthTech, and CleanTech. 1-click evaluation triggers launch deep agentic investigations immediately.
+<p align="center">
+  <img src="docs/screenshots/09-curated-ideas.png" alt="Curated Problem Library" width="100%"/>
+</p>
+
+---
+
+### 10. Grounded Executive AI Copilot (`Cmd/Ctrl + K`)
+Slide-out strategic partner grounded in active report findings. Ask follow-up questions, simulate VC partner pushback, or request wedge recommendations on demand.
+<p align="center">
+  <img src="docs/screenshots/10-copilot-drawer.png" alt="Grounded Executive AI Copilot" width="100%"/>
+</p>
+
+---
+
+### 11. Local SQLite Analysis Archive & Verdict Filter (`/history`)
+Persistent local analysis library with instant keyword search, verdict filters (`ALL`, `GO`, `PIVOT`, `KILL`), and 1-click iteration or resume capabilities.
+<p align="center">
+  <img src="docs/screenshots/11-analysis-history.png" alt="Analysis History & Archive" width="100%"/>
+</p>
 
 ---
 
