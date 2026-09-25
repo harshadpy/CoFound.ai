@@ -38,6 +38,7 @@
   <a href="#%EF%B8%8F-getting-started">Getting Started</a> •
   <a href="#-cloud--database-setup">Cloud & Supabase</a> •
   <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-documentation">Documentation</a> •
   <a href="#%EF%B8%8F-roadmap">Roadmap</a>
 </p>
 
@@ -350,6 +351,18 @@ The following tables power cloud features:
 <tr><td><b>Cloud Storage</b></td><td>Supabase (PostgreSQL)</td><td>BYOK vault, public reports, and alerts</td></tr>
 <tr><td><b>Local Storage</b></td><td>SQLite</td><td>Fast local runs and analysis history</td></tr>
 </table>
+
+<br/>
+
+## 📚 Documentation
+
+Comprehensive architectural blueprints, specifications, and reference manuals are organized in the [`docs/`](./docs) directory:
+
+- [**Product Requirements Document (PRD)**](./docs/prd.md) — Core principles, feature requirements, and agent specifications
+- [**Master Architecture & Reference**](./docs/reference.md) — System execution graph, deep architectural decisions, and agent definitions
+- [**Product & UI Architecture Overview**](./docs/app_overview.md) — Concise summary of page structure, UI language, and value proposition
+- [**UI Modernization Specification**](./docs/designmodernization.md) — Design system rules, typography scale, color tokens, and craft standards
+- [**Project State & Context Memory**](./docs/context.md) — Technical state, milestones, and engineering onboarding reference
 
 <br/>
 

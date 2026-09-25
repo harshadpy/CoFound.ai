@@ -405,8 +405,9 @@ Per-run agent communication
 
 cofound-ai/
 │
-├── PRD.md
-│   # Product Requirements Document (single source of truth)
+├── docs/
+│   └── prd.md
+│       # Product Requirements Document (single source of truth)
 │
 ├── README.md
 │   # Setup, architecture overview, and run instructions
