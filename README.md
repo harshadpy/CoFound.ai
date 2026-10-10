@@ -38,6 +38,7 @@
   <a href="#%EF%B8%8F-getting-started">Getting Started</a> •
   <a href="#-cloud--database-setup">Cloud & Supabase</a> •
   <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-deployment">Deployment</a> •
   <a href="#-documentation">Documentation</a> •
   <a href="#%EF%B8%8F-roadmap">Roadmap</a>
 </p>
@@ -354,10 +355,27 @@ The following tables power cloud features:
 
 <br/>
 
+## 🚀 Deployment
+
+CoFound.ai supports multiple deployment targets out of the box:
+
+- **1-Click Render.com:** Complete multi-service blueprint configured in [`render.yaml`](./render.yaml).
+- **Docker Compose:** Multi-stage production container with persistent volumes:
+  ```bash
+  docker compose up -d --build
+  ```
+- **Decoupled Frontend:** Ready-to-use edge deployment configs for [Netlify (`netlify.toml`)](./netlify.toml) and [Vercel (`vercel.json`)](./vercel.json).
+- **Self-Hosted VPS:** Production Nginx setup with SSE streaming non-buffering (`proxy_buffering off;`) and Let's Encrypt SSL.
+
+👉 **Read the full [Production Deployment Guide](./docs/deployment_guide.md)** or the [Fast-Track Deployment Reference](./DEPLOYMENT.md).
+
+<br/>
+
 ## 📚 Documentation
 
 Comprehensive architectural blueprints, specifications, and reference manuals are organized in the [`docs/`](./docs) directory:
 
+- [**Production Deployment Guide**](./docs/deployment_guide.md) — Multi-cloud deployment, Docker containerization, SSE streaming tuning, and Supabase migrations
 - [**Product Requirements Document (PRD)**](./docs/prd.md) — Core principles, feature requirements, and agent specifications
 - [**Master Architecture & Reference**](./docs/reference.md) — System execution graph, deep architectural decisions, and agent definitions
 - [**Product & UI Architecture Overview**](./docs/app_overview.md) — Concise summary of page structure, UI language, and value proposition
