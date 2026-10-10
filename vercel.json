@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://cofound-api.onrender.com/api/:path*"
+      "destination": "https://cofound-ai.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

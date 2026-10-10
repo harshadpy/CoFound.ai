@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ChevronRight, Loader2, GitCompare, ShieldAlert, Sparkles, ExternalLink, Bookmark, BookmarkCheck, Copy, Check, ArrowRight, Users, CheckCircle2, XCircle, Award, MapPin, Coins, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { apiUrl } from '../lib/api';
 import { useStore } from '../store/useStore';
 import { EmptyState, ErrorBanner, Button, useToast } from '../components/ui';
 
@@ -39,7 +40,7 @@ export default function CompetitorResearch() {
         setCopied(false);
 
         try {
-            const res = await fetch('/api/tools/competitors', {
+            const res = await fetch(apiUrl('/api/tools/competitors'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: q, sector: s })

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { apiUrl } from '../lib/api'
 
 // ─── Persistence helpers ────────────────────────────────────────────────────
 const STORAGE_KEY   = 'cofound_analysis_result';
@@ -166,7 +167,7 @@ export const useStore = create((set, get) => ({
             const activeUser = get().user;
             const effectiveUserId = (activeUser && activeUser.id) ? activeUser.id : 'default_user';
 
-            const response = await fetch('/api/analysis/start', {
+            const response = await fetch(apiUrl('/api/analysis/start'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -175,14 +176,28 @@ export const useStore = create((set, get) => ({
                     user_id: effectiveUserId
                 })
             });
+
+            const text = await response.text();
+            let data = {};
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    data = { detail: text };
+                }
+            }
+
             if (!response.ok) {
-                const errData = await response.json().catch(() => ({}));
-                const errMsg = Array.isArray(errData.detail)
-                    ? errData.detail.map(d => d.msg || JSON.stringify(d)).join(", ")
-                    : (typeof errData.detail === 'string' ? errData.detail : "Failed to start analysis");
+                const errMsg = Array.isArray(data.detail)
+                    ? data.detail.map(d => d.msg || JSON.stringify(d)).join(", ")
+                    : (typeof data.detail === 'string' ? data.detail : "Failed to start analysis");
                 throw new Error(errMsg);
             }
-            const data = await response.json();
+
+            if (!data.analysis_id) {
+                throw new Error("Backend did not return an analysis_id. Please check API server health.");
+            }
+
             persistActiveAnalysisId(data.analysis_id);
             set({ currentAnalysisId: data.analysis_id, uploadProgress: 20 });
             return data.analysis_id;
@@ -196,7 +211,7 @@ export const useStore = create((set, get) => ({
     pollStatus: async (analysisId) => {
         if (!analysisId) return;
         try {
-            const response = await fetch(`/api/analysis/${analysisId}/status`);
+            const response = await fetch(apiUrl(`/api/analysis/${analysisId}/status`));
             if (!response.ok) return "error";
             const data = await response.json();
             set({ 
@@ -236,7 +251,7 @@ export const useStore = create((set, get) => ({
     fetchAndSaveReport: async (analysisId, retries = 3) => {
         for (let attempt = 0; attempt < retries; attempt++) {
             try {
-                const reportRes = await fetch(`/api/analysis/${analysisId}/report`);
+                const reportRes = await fetch(apiUrl(`/api/analysis/${analysisId}/report`));
                 if (reportRes.ok) {
                     const reportData = await reportRes.json();
                     persistResult(reportData);
@@ -289,7 +304,7 @@ export const useStore = create((set, get) => ({
     fetchSavedInsights: async () => {
         const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch(`/api/saved-insights?user_id=${encodeURIComponent(userId)}`);
+            const res = await fetch(apiUrl(`/api/saved-insights?user_id=${encodeURIComponent(userId)}`));
             if (res.ok) {
                 const data = await res.json();
                 if (data.insights) {
@@ -315,7 +330,7 @@ export const useStore = create((set, get) => ({
 
         // Cloud sync to Supabase
         try {
-            await fetch('/api/saved-insights', {
+            await fetch(apiUrl('/api/saved-insights'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -339,7 +354,7 @@ export const useStore = create((set, get) => ({
         set({ savedInsights: updated });
 
         try {
-            await fetch(`/api/saved-insights/${id}`, { method: 'DELETE' });
+            await fetch(apiUrl(`/api/saved-insights/${id}`), { method: 'DELETE' });
         } catch (e) {
             console.error("Supabase insight delete error:", e);
         }
@@ -351,7 +366,7 @@ export const useStore = create((set, get) => ({
         set({ savedInsights: updated });
 
         try {
-            await fetch(`/api/saved-insights/${id}/note`, {
+            await fetch(apiUrl(`/api/saved-insights/${id}/note`), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ founder_note: note })
@@ -368,7 +383,7 @@ export const useStore = create((set, get) => ({
     fetchNotifications: async () => {
         const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch(`/api/notifications?user_id=${encodeURIComponent(userId)}`);
+            const res = await fetch(apiUrl(`/api/notifications?user_id=${encodeURIComponent(userId)}`));
             if (res.ok) {
                 const data = await res.json();
                 set({
@@ -389,7 +404,7 @@ export const useStore = create((set, get) => ({
             return { notifications: updated, unreadNotificationsCount: unread };
         });
         try {
-            await fetch(`/api/notifications/${id}/read?user_id=${encodeURIComponent(userId)}`, { method: 'POST' });
+            await fetch(apiUrl(`/api/notifications/${id}/read?user_id=${encodeURIComponent(userId)}`), { method: 'POST' });
         } catch (e) {
             console.error(e);
         }
@@ -402,7 +417,7 @@ export const useStore = create((set, get) => ({
             unreadNotificationsCount: 0
         }));
         try {
-            await fetch(`/api/notifications/read-all?user_id=${encodeURIComponent(userId)}`, { method: 'POST' });
+            await fetch(apiUrl(`/api/notifications/read-all?user_id=${encodeURIComponent(userId)}`), { method: 'POST' });
         } catch (e) {
             console.error(e);
         }
@@ -418,7 +433,7 @@ export const useStore = create((set, get) => ({
 
     login: async (email, name) => {
         try {
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch(apiUrl('/api/auth/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, name })
@@ -459,7 +474,7 @@ export const useStore = create((set, get) => ({
 
     logout: async () => {
         try {
-            await fetch('/api/auth/logout', { method: 'POST' });
+            await fetch(apiUrl('/api/auth/logout'), { method: 'POST' });
         } catch {}
         persistAuthSession(null);
         if (typeof window !== 'undefined') {
@@ -483,7 +498,7 @@ export const useStore = create((set, get) => ({
         const userId = currentUser?.id;
         if (!userId) return;
         try {
-            const res = await fetch(`/api/user/profile?user_id=${encodeURIComponent(userId)}`);
+            const res = await fetch(apiUrl(`/api/user/profile?user_id=${encodeURIComponent(userId)}`));
             if (res.ok) {
                 const data = await res.json();
                 const isDefault = data.id === 'default_user' || userId === 'default_user';
@@ -513,7 +528,7 @@ export const useStore = create((set, get) => ({
     updateUserProfile: async (payload) => {
         const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch(`/api/user/profile?user_id=${encodeURIComponent(userId)}`, {
+            const res = await fetch(apiUrl(`/api/user/profile?user_id=${encodeURIComponent(userId)}`), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -531,7 +546,7 @@ export const useStore = create((set, get) => ({
     updateApiKeys: async (keys) => {
         const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch(`/api/user/api-keys?user_id=${encodeURIComponent(userId)}`, {
+            const res = await fetch(apiUrl(`/api/user/api-keys?user_id=${encodeURIComponent(userId)}`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(keys)
@@ -549,7 +564,7 @@ export const useStore = create((set, get) => ({
     updatePlan: async (plan) => {
         const userId = get().user?.id || 'default_user';
         try {
-            const res = await fetch(`/api/user/plan?user_id=${encodeURIComponent(userId)}`, {
+            const res = await fetch(apiUrl(`/api/user/plan?user_id=${encodeURIComponent(userId)}`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ plan })
@@ -587,7 +602,7 @@ export const useStore = create((set, get) => ({
         set({ copilotMessages: newHistory, copilotLoading: true });
 
         try {
-            const res = await fetch('/api/copilot/chat', {
+            const res = await fetch(apiUrl('/api/copilot/chat'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -626,7 +641,7 @@ export const useStore = create((set, get) => ({
     // ── Share Permalinks (Supabase Cloud) ───────────────────────────────────
     shareReport: async (analysisId, title) => {
         try {
-            const res = await fetch(`/api/analysis/${analysisId}/share`, {
+            const res = await fetch(apiUrl(`/api/analysis/${analysisId}/share`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title })

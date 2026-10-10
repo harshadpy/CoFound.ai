@@ -14,6 +14,7 @@ const PRESETS = [
 ];
 
 import { parseMetricData } from '../lib/metricParser';
+import { apiUrl } from '../lib/api';
 
 export default function TrendExplorer() {
     const { toolResults, setToolResult, saveInsight, setAnalysisInput, setContextTags } = useStore();
@@ -40,7 +41,7 @@ export default function TrendExplorer() {
         setCopied(false);
 
         try {
-            const res = await fetch('/api/tools/trends', {
+            const res = await fetch(apiUrl('/api/tools/trends'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: q, sector: s })

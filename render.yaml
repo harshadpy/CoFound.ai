@@ -3,7 +3,7 @@ services:
   # Backend API & Agent Swarm Execution Service
   # ───────────────────────────────────────────────────────────────────
   - type: web
-    name: cofound-api
+    name: cofound-ai
     runtime: python
     plan: standard
     buildCommand: pip install -r requirements.txt
@@ -31,13 +31,13 @@ services:
   # Optional: Decoupled Static Frontend Site (React + Vite)
   # ───────────────────────────────────────────────────────────────────
   - type: static
-    name: cofound-ui
+    name: cofound-frontend
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: ./frontend/dist
     routes:
       - type: rewrite
         source: /api/*
-        destination: https://cofound-api.onrender.com/api/*
+        destination: https://cofound-ai.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html

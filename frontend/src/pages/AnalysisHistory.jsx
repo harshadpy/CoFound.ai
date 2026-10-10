@@ -7,6 +7,7 @@ import {
     ChevronRight, Filter, AlertCircle 
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { apiUrl } from '../lib/api';
 import { EmptyState, Button, useToast } from '../components/ui';
 
 export default function AnalysisHistory() {
@@ -21,7 +22,7 @@ export default function AnalysisHistory() {
     const loadAnalyses = async () => {
         try {
             setLoading(true);
-            const res = await fetch('/api/analyses');
+            const res = await fetch(apiUrl('/api/analyses'));
             if (res.ok) {
                 const data = await res.json();
                 setAnalyses(data || []);
@@ -45,7 +46,7 @@ export default function AnalysisHistory() {
         
         try {
             setDeletingId(id);
-            const res = await fetch(`/api/analyses/${id}`, { method: 'DELETE' });
+            const res = await fetch(apiUrl(`/api/analyses/${id}`), { method: 'DELETE' });
             if (res.ok) {
                 setAnalyses(prev => prev.filter(a => a.id !== id));
                 toast('Analysis deleted successfully', 'info');

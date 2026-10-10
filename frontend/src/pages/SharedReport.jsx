@@ -4,6 +4,7 @@ import {
     Sparkles, Shield, AlertTriangle, CheckCircle2, 
     ArrowUpRight, Eye, Calendar, Award, ExternalLink 
 } from 'lucide-react';
+import { apiUrl } from '../lib/api';
 
 export default function SharedReport() {
     const { token } = useParams();
@@ -15,7 +16,7 @@ export default function SharedReport() {
         async function loadReport() {
             setLoading(true);
             try {
-                const res = await fetch(`/api/share/${token}`);
+                const res = await fetch(apiUrl(`/api/share/${token}`));
                 if (!res.ok) throw new Error("This shared market report was not found or link has expired.");
                 const json = await res.json();
                 setData(json);

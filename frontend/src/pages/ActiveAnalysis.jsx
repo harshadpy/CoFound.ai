@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, CheckCircle2, Circle, AlertCircle, Lightbulb, Users, TrendingUp, Target, Wrench, AlertTriangle, Search as SearchIcon, Zap, FileCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { apiUrl } from '../lib/api';
 import { ErrorBanner } from '../components/ui';
 
 export default function ActiveAnalysis() {
@@ -66,7 +67,7 @@ export default function ActiveAnalysis() {
 
         // Try Server-Sent Events for zero-latency live telemetry
         try {
-            eventSource = new EventSource(`/api/analysis/${currentAnalysisId}/stream`);
+            eventSource = new EventSource(apiUrl(`/api/analysis/${currentAnalysisId}/stream`));
 
             eventSource.onmessage = (e) => {
                 try {
