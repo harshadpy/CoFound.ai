@@ -118,3 +118,16 @@ dist/
 build/
 *.tsbuildinfo
 
+# ── Deployment & Cloud Configurations (Hidden) ──
+DEPLOYMENT.md
+Dockerfile
+docker-compose.yml
+docs/deployment_guide.md
+netlify.toml
+render.yaml
+runtime.txt
+vercel.json
+frontend/vercel.json
+frontend/public/_redirects
+
+
