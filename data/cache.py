@@ -1,10 +1,13 @@
 import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Dict
 from sqlalchemy import Column, String, JSON, DateTime
 from data.database import Base, engine, SessionLocal
 from utils.logger import logger
+
+def utcnow():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class CacheEntry(Base):
     __tablename__ = "cache_entries"
@@ -13,7 +16,7 @@ class CacheEntry(Base):
     namespace = Column(String(32), index=True, nullable=False)
     query_preview = Column(String(255), nullable=True)
     value = Column(JSON, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
     expires_at = Column(DateTime, index=True, nullable=False)
 
 def init_cache_table():
@@ -37,11 +40,16 @@ def get_cached(namespace: str, raw_key: str) -> Optional[Any]:
         if not entry:
             return None
 
-        # Check TTL expiration
-        if entry.expires_at < datetime.utcnow():
-            session.delete(entry)
-            session.commit()
-            return None
+        # Check TTL expiration safely
+        now = utcnow()
+        exp = entry.expires_at
+        if exp is not None:
+            if exp.tzinfo is not None:
+                exp = exp.replace(tzinfo=None)
+            if exp < now:
+                session.delete(entry)
+                session.commit()
+                return None
 
         logger.info("cache_hit", namespace=namespace, preview=entry.query_preview)
         return entry.value
@@ -63,7 +71,7 @@ def set_cached(
     Default TTL is 24 hours (86,400 seconds).
     """
     key = compute_cache_key(namespace, raw_key)
-    expires_at = datetime.utcnow() + timedelta(seconds=ttl_seconds)
+    expires_at = utcnow() + timedelta(seconds=ttl_seconds)
     preview = query_preview or raw_key[:120]
 
     session = SessionLocal()
@@ -72,7 +80,7 @@ def set_cached(
         if entry:
             entry.value = value
             entry.query_preview = preview
-            entry.created_at = datetime.utcnow()
+            entry.created_at = utcnow()
             entry.expires_at = expires_at
         else:
             entry = CacheEntry(
@@ -80,7 +88,7 @@ def set_cached(
                 namespace=namespace,
                 query_preview=preview,
                 value=value,
-                created_at=datetime.utcnow(),
+                created_at=utcnow(),
                 expires_at=expires_at
             )
             session.add(entry)
@@ -98,7 +106,7 @@ def clear_expired() -> int:
     """Removes all expired entries across all namespaces."""
     session = SessionLocal()
     try:
-        now = datetime.utcnow()
+        now = utcnow()
         deleted = session.query(CacheEntry).filter(CacheEntry.expires_at < now).delete()
         session.commit()
         return deleted
@@ -130,7 +138,7 @@ def get_cache_stats() -> Dict[str, Any]:
     """Returns total entries and breakdown by namespace."""
     session = SessionLocal()
     try:
-        now = datetime.utcnow()
+        now = utcnow()
         total = session.query(CacheEntry).count()
         valid = session.query(CacheEntry).filter(CacheEntry.expires_at >= now).count()
         expired = total - valid

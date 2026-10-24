@@ -71,16 +71,30 @@ def health_check():
 # ─────────────────────────────────────────────────────
 FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
 
+from fastapi import Request
+
 if os.path.exists(FRONTEND_DIST):
     assets_dir = os.path.join(FRONTEND_DIST, "assets")
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
     @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
+    async def serve_spa(full_path: str, request: Request):
         if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
             from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Not Found")
+        
+        # If client is requesting JSON at root (e.g. API health probes, curl, test clients)
+        accept = request.headers.get("accept", "")
+        if (full_path == "" or full_path == "/") and ("application/json" in accept or "text/html" not in accept):
+            return {
+                "status": "ok",
+                "service": "CoFound.ai Modular Backend",
+                "model": "gpt-5.6-luna",
+                "persistence": "Dual (Supabase PostgreSQL + SQLite)",
+                "cache": "Active"
+            }
+
         file_path = os.path.join(FRONTEND_DIST, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)

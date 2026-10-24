@@ -130,8 +130,8 @@ export function Sidebar() {
         )}>
             {/* Logo & Top Controls */}
             <div className={cn(
-                'flex items-center justify-between border-b border-border',
-                collapsed ? 'p-2.5 flex-col gap-2' : 'px-4 py-3'
+                'h-14 flex items-center justify-between border-b border-border shrink-0',
+                collapsed ? 'px-2 justify-center' : 'px-4'
             )}>
                 <div 
                     className="flex items-center gap-2.5 cursor-pointer"
@@ -151,21 +151,23 @@ export function Sidebar() {
                     )}
                 </div>
 
-                {/* Dark-mode toggle moved to Top Header */}
-                <button
-                    onClick={toggleDark}
-                    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                    className={cn(
-                        'w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150 shrink-0',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        isDark
-                            ? 'text-amber-400 hover:bg-amber-950/30 hover:text-amber-300'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    )}
-                    title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                    {isDark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
-                </button>
+                {/* Dark-mode toggle */}
+                {!collapsed && (
+                    <button
+                        onClick={toggleDark}
+                        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                        className={cn(
+                            'w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150 shrink-0',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            isDark
+                                ? 'text-amber-400 hover:bg-amber-950/30 hover:text-amber-300'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    >
+                        {isDark ? <Sun className="w-4 h-4" aria-hidden="true" /> : <Moon className="w-4 h-4" aria-hidden="true" />}
+                    </button>
+                )}
             </div>
 
             {/* Nav */}
@@ -340,8 +342,8 @@ export function Sidebar() {
                     </div>
                 )}
 
-                {/* User card or Sign In button based on authentication state */}
-                {isAuthenticated && user ? (
+                {/* User card or Guest Sign In button based on authentication state */}
+                {isAuthenticated && user && !user.is_guest ? (
                     !collapsed ? (
                         <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-muted group transition-colors">
                             <div 
@@ -402,22 +404,48 @@ export function Sidebar() {
                     )
                 ) : (
                     !collapsed ? (
-                        <button
-                            onClick={openAuthModal}
-                            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold text-xs shadow-sm hover:shadow transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                        >
-                            <LogIn className="w-3.5 h-3.5" />
-                            <span>Sign In / Register</span>
-                        </button>
+                        <div className="flex flex-col gap-2 p-2.5 rounded-2xl bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800/60">
+                            <div className="flex items-center justify-between px-0.5">
+                                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Guest Mode
+                                </span>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    FREE PRO
+                                </span>
+                            </div>
+                            <button
+                                onClick={openAuthModal}
+                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 hover:text-white border border-slate-700 font-semibold text-xs shadow-xs hover:shadow transition-all cursor-pointer"
+                            >
+                                <LogIn className="w-3.5 h-3.5 text-slate-400" />
+                                <span>Save Work & Sign In</span>
+                            </button>
+                        </div>
                     ) : (
                         <button
                             onClick={openAuthModal}
-                            className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                            title="Sign In to CoFound"
+                            className="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 hover:text-white border border-slate-700 flex items-center justify-center shadow-xs transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer"
+                            title="Guest Mode — Sign In to Save Work"
                         >
-                            <LogIn className="w-4 h-4" />
+                            <LogIn className="w-4 h-4 text-slate-400" />
                         </button>
                     )
+                )}
+
+                {collapsed && (
+                    <button
+                        onClick={toggleDark}
+                        aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                        className={cn(
+                            'w-9 h-9 mt-2 rounded-xl flex items-center justify-center transition-colors duration-150',
+                            isDark
+                                ? 'text-amber-400 hover:bg-amber-950/30 hover:text-amber-300'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    >
+                        {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    </button>
                 )}
             </div>
         </aside>

@@ -96,3 +96,55 @@ def verify_competitor_grounding(
     )
 
     return competitor_data
+
+
+import ipaddress
+import socket
+import httpx
+import asyncio
+
+BLOCKED_IP_NETWORKS = [
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("169.254.0.0/16"), # Link-local / AWS metadata
+    ipaddress.ip_network("::1/128"),
+]
+
+def is_safe_url(url: str) -> bool:
+    """SSRF guard: Ensures destination URL does not resolve to local or private network address."""
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        
+        # Disallow localhost directly
+        if hostname.lower() in ("localhost", "127.0.0.1", "0.0.0.0"):
+            return False
+
+        # Resolve IP
+        ip_str = socket.gethostbyname(hostname)
+        ip = ipaddress.ip_address(ip_str)
+
+        for blocked in BLOCKED_IP_NETWORKS:
+            if ip in blocked:
+                return False
+        return True
+    except Exception:
+        return False
+
+async def verify_url_reachability(url: str, timeout_sec: float = 3.0) -> bool:
+    """Verifies if a cited competitor URL is live and reachable via HTTP HEAD request."""
+    if not url or not is_safe_url(url):
+        return False
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout_sec, follow_redirects=True, verify=False) as client:
+            resp = await client.head(url)
+            return resp.status_code < 400
+    except Exception:
+        return False

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
-    X, Shield, Sparkles, Database, Mail, User, 
-    ArrowRight, Loader2, CheckCircle2, Lock
+    X, Mail, Lock, User, ArrowRight, Loader2, 
+    Eye, EyeOff, Sparkles, CheckCircle2, Shield
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
@@ -9,83 +9,141 @@ export default function AuthModal() {
     const { 
         authModalOpen, 
         closeAuthModal, 
-        login 
+        login,
+        signup,
+        user
     } = useStore();
 
+    const [mode, setMode] = useState('login'); // 'login' | 'signup'
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [name, setName] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [migratedNotice, setMigratedNotice] = useState(null);
 
     if (!authModalOpen) return null;
+
+    const isGuest = user?.is_guest;
 
     const handleLoginHarshad = async () => {
         setLoading(true);
         setError(null);
-        const res = await login('harshad@cofound.ai', 'Harshad');
+        setMigratedNotice(null);
+        const res = await login('harshad@cofound.ai', 'FounderPassword123!', 'Harshad');
         setLoading(false);
         if (!res.success) {
             setError(res.message);
+        } else if (res.migratedCount > 0) {
+            setMigratedNotice(`Migrated ${res.migratedCount} items to your account!`);
         }
     };
 
-    const handleCustomSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!email.trim() || !email.includes('@')) {
+        setError(null);
+        setMigratedNotice(null);
+
+        const cleanEmail = email.trim();
+        if (!cleanEmail || !cleanEmail.includes('@')) {
             setError('Please provide a valid email address.');
             return;
         }
 
+        if (!password || password.length < 6) {
+            setError('Password must be at least 6 characters.');
+            return;
+        }
+
         setLoading(true);
-        setError(null);
-        const res = await login(email.trim(), name.trim());
+        let res;
+        if (mode === 'signup') {
+            res = await signup(cleanEmail, password, name.trim());
+        } else {
+            res = await login(cleanEmail, password);
+        }
         setLoading(false);
+
         if (!res.success) {
             setError(res.message);
+        } else if (res.migratedCount > 0) {
+            setMigratedNotice(`Transferred ${res.migratedCount} guest items to your account!`);
         }
     };
 
     return (
         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
             onClick={(e) => {
                 if (e.target === e.currentTarget) closeAuthModal();
             }}
         >
             <div 
-                className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                className="relative w-full max-w-sm sm:max-w-md bg-white dark:bg-[#0E131F] rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="auth-modal-title"
             >
-                {/* Header Gradient Accent */}
-                <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-
                 {/* Close Button */}
                 <button
                     onClick={closeAuthModal}
-                    className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                    aria-label="Close authentication modal"
+                    className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    aria-label="Close"
                 >
                     <X className="w-4 h-4" />
                 </button>
 
-                <div className="p-6">
-                    {/* Header */}
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                            <Lock className="w-5 h-5" />
+                <div className="p-7 sm:p-8">
+                    {/* Minimalist Logo Mark */}
+                    <div className="flex flex-col items-center text-center mb-6">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white font-extrabold text-xl shadow-lg shadow-indigo-500/25 mb-3">
+                            CF
                         </div>
-                        <div>
-                            <h2 id="auth-modal-title" className="text-lg font-bold text-slate-900 dark:text-white">
-                                Sign In to CoFound.ai
-                            </h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                Supabase PostgreSQL Persistence
+                        <h2 id="auth-modal-title" className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                            {mode === 'signup' ? 'Create your account' : 'Welcome back'}
+                        </h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Supabase Cloud Auth • All Pro Features Free
+                        </p>
+                    </div>
+
+                    {/* Mode Toggle (ChatGPT Style Pill Tabs) */}
+                    <div className="flex p-1 bg-slate-100 dark:bg-slate-900/90 rounded-xl mb-5 border border-slate-200/60 dark:border-slate-800/60">
+                        <button
+                            type="button"
+                            onClick={() => { setMode('login'); setError(null); }}
+                            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                                mode === 'login'
+                                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                        >
+                            Sign In
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { setMode('signup'); setError(null); }}
+                            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                                mode === 'signup'
+                                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                            }`}
+                        >
+                            Create Account
+                        </button>
+                    </div>
+
+                    {/* Guest Data Migration Reassurance Banner */}
+                    {isGuest && (
+                        <div className="mb-5 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs flex items-start gap-2.5">
+                            <Sparkles className="w-4 h-4 shrink-0 text-indigo-500 mt-0.5" />
+                            <p className="leading-relaxed">
+                                <strong>Guest Session Active:</strong> Your existing analyses, bookmarks, and reports will seamlessly transfer to your account.
                             </p>
                         </div>
-                    </div>
+                    )}
 
                     {error && (
                         <div className="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-medium">
@@ -93,113 +151,130 @@ export default function AuthModal() {
                         </div>
                     )}
 
-                    {/* Quick Access Account (Harshad) */}
-                    <div className="mb-6 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800">
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                Primary Founder Account
-                            </span>
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                                1-CLICK ACCESS
-                            </span>
+                    {migratedNotice && (
+                        <div className="mb-5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            <span>{migratedNotice}</span>
                         </div>
+                    )}
 
-                        <button
-                            type="button"
-                            onClick={handleLoginHarshad}
-                            disabled={loading}
-                            className="w-full flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 hover:border-indigo-500/50 dark:hover:border-indigo-500/50 shadow-sm hover:shadow transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                        >
-                            <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
-                                    HP
-                                </div>
-                                <div className="text-left truncate">
-                                    <p className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                                        Harshad
-                                    </p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                        harshad@cofound.ai
-                                    </p>
+                    {/* Minimalist Form */}
+                    <form onSubmit={handleSubmit} className="space-y-3.5">
+                        {mode === 'signup' && (
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                    Name (Optional)
+                                </label>
+                                <div className="relative">
+                                    <User className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="Alex"
+                                        className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                                    />
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 shrink-0 ml-2">
-                                <span>Continue</span>
-                                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                            </div>
-                        </button>
-                    </div>
-
-                    {/* Divider */}
-                    <div className="relative flex items-center justify-center mb-6">
-                        <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
-                        <span className="bg-white dark:bg-slate-900 px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider relative">
-                            Or Use Custom Email
-                        </span>
-                    </div>
-
-                    {/* Custom Sign In / Sign Up Form */}
-                    <form onSubmit={handleCustomSubmit} className="space-y-3.5">
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                                Founder Name (Optional)
-                            </label>
-                            <div className="relative">
-                                <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="e.g. Alex"
-                                    className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-400"
-                                />
-                            </div>
-                        </div>
+                        )}
 
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                                Email Address <span className="text-rose-500">*</span>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                                Email Address
                             </label>
                             <div className="relative">
-                                <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                                <Mail className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                                 <input
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="founder@startup.io"
-                                    className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-slate-400"
+                                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
                                 />
                             </div>
                         </div>
 
+                        <div>
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                    Password
+                                </label>
+                                <span className="text-[10px] text-slate-400">Min. 6 chars</span>
+                            </div>
+                            <div className="relative">
+                                <Lock className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-400"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(p => !p)}
+                                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Sleek Dark Primary Button */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full mt-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold text-sm shadow-md hover:shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50"
+                            className="w-full mt-2 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white dark:text-slate-100 border border-slate-800 dark:border-slate-700 font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-50"
                         >
                             {loading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    <span>Connecting to Supabase...</span>
+                                    <span>{mode === 'signup' ? 'Creating account...' : 'Signing in...'}</span>
                                 </>
                             ) : (
                                 <>
-                                    <span>Sign In or Register</span>
+                                    <span>Continue</span>
                                     <ArrowRight className="w-4 h-4" />
                                 </>
                             )}
                         </button>
                     </form>
+
+                    {/* Divider */}
+                    <div className="relative flex items-center justify-center my-5">
+                        <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+                        <span className="bg-white dark:bg-[#0E131F] px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider relative">
+                            Or 1-Click Demo
+                        </span>
+                    </div>
+
+                    {/* Quick Demo Harshad Button */}
+                    <button
+                        type="button"
+                        onClick={handleLoginHarshad}
+                        disabled={loading}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 hover:border-indigo-500/50 transition-all text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    >
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white font-bold text-[11px] flex items-center justify-center shadow-xs">
+                                HP
+                            </div>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                Harshad (harshad@cofound.ai)
+                            </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                            Demo Login →
+                        </span>
+                    </button>
                 </div>
 
-                {/* Footer status bar */}
-                <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-1.5">
-                        <Database className="w-3.5 h-3.5 text-indigo-500" />
-                        <span className="font-mono">Connected: szodeslkalqedrbmwqks</span>
-                    </div>
-                    <span>Instant Session Sync</span>
+                {/* Footer status note */}
+                <div className="px-6 py-3 bg-slate-50/70 dark:bg-slate-900/40 border-t border-slate-200/80 dark:border-slate-800/80 text-center text-[11px] text-slate-400">
+                    Free access tier active • No payment gateway required
                 </div>
             </div>
         </div>

@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     supabase_url: Optional[str] = Field(default=None, validation_alias="SUPABASE_URL")
     supabase_anon_key: Optional[str] = Field(default=None, validation_alias="SUPABASE_ANON_KEY")
     supabase_publishable_key: Optional[str] = Field(default=None, validation_alias="SUPABASE_PUBLISHABLE_KEY")
+    supabase_jwt_secret: Optional[str] = Field(default=None, validation_alias="SUPABASE_JWT_SECRET")
+
+    # Centralized Access & Billing Configuration
+    # Free access mode: BILLING_ENABLED=false bypasses paywalls while keeping AI limits safe
+    billing_enabled: bool = Field(default=False, validation_alias="BILLING_ENABLED")
+    guest_analysis_limit: int = Field(default=5, validation_alias="GUEST_ANALYSIS_LIMIT")
+    user_analysis_limit: int = Field(default=50, validation_alias="USER_ANALYSIS_LIMIT")
     
     class Config:
         env_file = ".env"

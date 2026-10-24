@@ -1,4 +1,6 @@
+import os
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
 from agents.state import AgentState
 from utils.logger import logger
 
@@ -15,7 +17,13 @@ from agents.synthesis.agent import synthesis_node
 from agents.decision.agent import decision_node
 from agents.report_generation.agent import report_node
 
-def create_workflow():
+from langgraph.checkpoint.memory import MemorySaver
+
+# ─── Async-Compatible Graph Checkpointer Setup ──────────────────────────────
+checkpointer = MemorySaver()
+logger.info("graph_checkpointer_initialized", type="MemorySaver")
+
+def build_graph_workflow() -> StateGraph:
     workflow = StateGraph(AgentState)
     
     # Phase 1: Entry & Structuring
@@ -66,7 +74,12 @@ def create_workflow():
     # Report -> End
     workflow.add_edge("report", END)
     
-    return workflow.compile()
+    return workflow
 
-# Singleton graph instance
-app = create_workflow()
+_workflow = build_graph_workflow()
+
+# 1. Autonomous execution: fully checkpointed at every step
+app = _workflow.compile(checkpointer=checkpointer)
+
+# 2. Interactive execution (HITL): halts before 'synthesis' for human review & steering
+app_hitl = _workflow.compile(checkpointer=checkpointer, interrupt_before=["synthesis"])

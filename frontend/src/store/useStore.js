@@ -7,14 +7,21 @@ const DARK_KEY      = 'cofound_dark_mode';
 const TOOL_KEY      = 'cofound_tool_results';   // sessionStorage – tool result cache
 const INSIGHTS_KEY  = 'cofound_saved_insights'; // localStorage – saved insights
 
-// Dark mode
+// Dark mode — Defaults to dark mode automatically when opened
 function loadDarkMode() {
     try {
         const saved = localStorage.getItem(DARK_KEY);
-        const isDark = saved === 'true';
+        // Automatically default to dark mode if not explicitly turned off
+        const isDark = saved === null ? true : saved === 'true';
         if (isDark) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
         return isDark;
-    } catch { return false; }
+    } catch { 
+        if (typeof document !== 'undefined') {
+            document.documentElement.classList.add('dark');
+        }
+        return true; 
+    }
 }
 function applyDarkMode(isDark) {
     try {
@@ -70,6 +77,35 @@ function persistSavedInsights(insights) {
 
 // User Auth Session (localStorage)
 const AUTH_KEY = 'cofound_auth_session';
+const GUEST_KEY = 'cofound_guest_id';
+
+function getOrCreateGuestId() {
+    try {
+        // Individual for each browsing session
+        let gid = sessionStorage.getItem(GUEST_KEY);
+        if (!gid || !gid.startsWith('guest_')) {
+            gid = 'guest_' + Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
+            sessionStorage.setItem(GUEST_KEY, gid);
+        }
+        return gid;
+    } catch {
+        return 'guest_' + Date.now().toString(36);
+    }
+}
+
+function createGuestUser() {
+    const gid = getOrCreateGuestId();
+    return {
+        id: gid,
+        name: "Harshad",
+        email: null,
+        avatar: "H",
+        plan: "pro",
+        is_guest: true,
+        masked_keys: {}
+    };
+}
+
 function loadAuthSession() {
     try {
         const raw = localStorage.getItem(AUTH_KEY);
@@ -78,34 +114,29 @@ function loadAuthSession() {
         return null;
     }
 }
+
 function persistAuthSession(session) {
     try {
-        if (session) localStorage.setItem(AUTH_KEY, JSON.stringify(session));
-        else localStorage.removeItem(AUTH_KEY);
+        // Only registered, authenticated users are permanently saved to localStorage
+        if (session && !session.is_guest) {
+            localStorage.setItem(AUTH_KEY, JSON.stringify(session));
+        } else {
+            localStorage.removeItem(AUTH_KEY);
+        }
     } catch {}
 }
 
 const savedSession = loadAuthSession();
-const hasLoggedOut = typeof window !== 'undefined' && localStorage.getItem('cofound_has_logged_out') === 'true';
-
 let initialIsAuth = false;
 let initialUser = null;
 
-if (savedSession && savedSession.id) {
+if (savedSession && savedSession.id && !savedSession.is_guest) {
     initialIsAuth = true;
     initialUser = savedSession;
-} else if (!hasLoggedOut) {
-    // Default initial experience is Harshad
-    initialIsAuth = true;
-    initialUser = {
-        id: "default_user",
-        name: "Harshad",
-        email: "harshad@cofound.ai",
-        avatar: "HP",
-        plan: "pro",
-        masked_keys: {}
-    };
-    persistAuthSession(initialUser);
+} else {
+    // Guest mode: Clean and individual per session
+    initialIsAuth = false;
+    initialUser = createGuestUser();
 }
 
 // ─── Store ──────────────────────────────────────────────────────────────────
@@ -156,11 +187,15 @@ export const useStore = create((set, get) => ({
     agentStatuses: {},
     agentMetrics: {},
     progressPercentage: 0,
+    hitlEnabled: false,
+    hitlReviewData: null,
+    setHitlEnabled: (val) => set({ hitlEnabled: val }),
+    setHitlReviewData: (data) => set({ hitlReviewData: data }),
 
     startAnalysis: async (customTags = null) => {
-        set({ isGenerating: true, uploadProgress: 10, analysisStatus: "pending" });
+        set({ isGenerating: true, uploadProgress: 10, analysisStatus: "pending", hitlReviewData: null });
         try {
-            const { analysisInput, contextTags } = get();
+            const { analysisInput, contextTags, hitlEnabled } = get();
             const effectiveTags = customTags || contextTags;
             if (customTags) set({ contextTags: customTags });
             
@@ -173,7 +208,8 @@ export const useStore = create((set, get) => ({
                 body: JSON.stringify({ 
                     raw_text: analysisInput, 
                     context_tags: effectiveTags,
-                    user_id: effectiveUserId
+                    user_id: effectiveUserId,
+                    hitl_enabled: hitlEnabled
                 })
             });
 
@@ -222,9 +258,20 @@ export const useStore = create((set, get) => ({
             if (data.status === "completed") {
                 await get().fetchAndSaveReport(analysisId);
                 return "completed";
+            } else if (data.status === "awaiting_review") {
+                set({ analysisStatus: "awaiting_review", isGenerating: false });
+                return "awaiting_review";
             } else if (data.status === "failed") {
                 set({ analysisStatus: "failed", isGenerating: false });
                 return "failed";
+            } else if (data.status === "running") {
+                set({ 
+                    analysisStatus: "running", 
+                    isGenerating: true,
+                    hitlReviewData: null,
+                    uploadProgress: Math.max(data.progress_percentage || 65, 10) 
+                });
+                return "running";
             } else {
                 set({ uploadProgress: Math.max(data.progress_percentage || 10, 10) });
                 return "pending";
@@ -244,8 +291,60 @@ export const useStore = create((set, get) => ({
             updates.progressPercentage = data.progress_percentage;
             updates.uploadProgress = data.progress_percentage;
         }
-        if (data.status) updates.analysisStatus = data.status;
+        if (data.type === 'hitl_interrupt') {
+            updates.analysisStatus = 'awaiting_review';
+            updates.isGenerating = false;
+            if (data.review_data) updates.hitlReviewData = data.review_data;
+        } else if (data.type === 'completed') {
+            updates.analysisStatus = 'completed';
+        } else if (data.type === 'failed') {
+            updates.analysisStatus = 'failed';
+        } else if (data.type === 'status_change' && data.status) {
+            updates.analysisStatus = data.status;
+            if (data.status === 'awaiting_review') {
+                updates.isGenerating = false;
+            } else if (data.status === 'running') {
+                updates.isGenerating = true;
+                updates.hitlReviewData = null;
+            }
+        } else if (data.type === 'init' && data.status) {
+            updates.analysisStatus = data.status;
+            if (data.status === 'awaiting_review') updates.isGenerating = false;
+        }
         set(updates);
+    },
+
+    resumeAnalysis: async (analysisId, feedback) => {
+        // Optimistically set synthesis as running so UI gives immediate live feedback
+        set((state) => ({ 
+            isGenerating: true, 
+            analysisStatus: "running",
+            hitlReviewData: null,
+            agentStatuses: {
+                ...state.agentStatuses,
+                synthesis: "running"
+            },
+            agentMetrics: {
+                ...state.agentMetrics,
+                synthesis: "Synthesizing research & founder steering..."
+            }
+        }));
+        try {
+            const response = await fetch(apiUrl(`/api/analysis/${analysisId}/resume`), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(feedback)
+            });
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.detail || "Failed to resume analysis from checkpoint.");
+            }
+            return true;
+        } catch (err) {
+            console.error("resumeAnalysis error:", err);
+            set({ isGenerating: false });
+            throw err;
+        }
     },
 
     fetchAndSaveReport: async (analysisId, retries = 3) => {
@@ -431,12 +530,15 @@ export const useStore = create((set, get) => ({
     openAuthModal: () => set({ authModalOpen: true }),
     closeAuthModal: () => set({ authModalOpen: false }),
 
-    login: async (email, name) => {
+    quota: { used: 0, limit: 5, remaining: 5 },
+
+    login: async (email, password = '', name = null) => {
         try {
+            const currentGuestId = get().user?.is_guest ? get().user.id : null;
             const res = await fetch(apiUrl('/api/auth/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name })
+                body: JSON.stringify({ email, password, name, guest_id: currentGuestId })
             });
             if (res.ok) {
                 const data = await res.json();
@@ -445,14 +547,15 @@ export const useStore = create((set, get) => ({
                     id: u.id,
                     name: u.full_name || u.name || "Founder",
                     email: u.email,
-                    avatar: u.avatar || (u.full_name ? u.full_name.slice(0, 2).toUpperCase() : "HP"),
-                    plan: u.plan || "pro",
+                    avatar: u.avatar || (u.full_name ? u.full_name.slice(0, 2).toUpperCase() : "CO"),
+                    plan: "pro",
+                    is_guest: false,
                     masked_keys: u.masked_keys || {},
                     has_custom_keys: u.has_custom_keys || false
                 };
                 persistAuthSession(formattedUser);
-                if (typeof window !== 'undefined') {
-                    localStorage.removeItem('cofound_has_logged_out');
+                if (data.token) {
+                    try { localStorage.setItem('cofound_auth_token', data.token); } catch {}
                 }
                 set({
                     user: formattedUser,
@@ -461,7 +564,8 @@ export const useStore = create((set, get) => ({
                 });
                 get().fetchNotifications();
                 get().fetchSavedInsights();
-                return { success: true, user: formattedUser, message: data.message };
+                get().fetchUserProfile();
+                return { success: true, user: formattedUser, message: data.message, migratedCount: data.migrated_count };
             } else {
                 const err = await res.json();
                 return { success: false, message: err.detail || "Authentication failed." };
@@ -472,16 +576,63 @@ export const useStore = create((set, get) => ({
         }
     },
 
+    signup: async (email, password, name = null) => {
+        try {
+            const currentGuestId = get().user?.is_guest ? get().user.id : null;
+            const res = await fetch(apiUrl('/api/auth/signup'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, name, guest_id: currentGuestId })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const u = data.user;
+                const formattedUser = {
+                    id: u.id,
+                    name: u.full_name || u.name || "Founder",
+                    email: u.email,
+                    avatar: u.avatar || (u.full_name ? u.full_name.slice(0, 2).toUpperCase() : "CO"),
+                    plan: "pro",
+                    is_guest: false,
+                    masked_keys: u.masked_keys || {},
+                    has_custom_keys: u.has_custom_keys || false
+                };
+                persistAuthSession(formattedUser);
+                if (data.token) {
+                    try { localStorage.setItem('cofound_auth_token', data.token); } catch {}
+                }
+                set({
+                    user: formattedUser,
+                    isAuthenticated: true,
+                    authModalOpen: false
+                });
+                get().fetchNotifications();
+                get().fetchSavedInsights();
+                get().fetchUserProfile();
+                return { success: true, user: formattedUser, message: data.message, migratedCount: data.migrated_count };
+            } else {
+                const err = await res.json();
+                return { success: false, message: err.detail || "Account creation failed." };
+            }
+        } catch (e) {
+            console.error("Signup request error:", e);
+            return { success: false, message: "Network error during account creation." };
+        }
+    },
+
     logout: async () => {
         try {
             await fetch(apiUrl('/api/auth/logout'), { method: 'POST' });
         } catch {}
-        persistAuthSession(null);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('cofound_has_logged_out', 'true');
-        }
+        try { localStorage.removeItem('cofound_auth_token'); } catch {}
+        try { localStorage.removeItem(AUTH_KEY); } catch {}
+        try { sessionStorage.removeItem(GUEST_KEY); } catch {}
+        
+        // Reset to a clean, isolated guest session
+        const guest = createGuestUser();
+        
         set({
-            user: null,
+            user: guest,
             isAuthenticated: false,
             settingsOpen: false,
             notifications: [],

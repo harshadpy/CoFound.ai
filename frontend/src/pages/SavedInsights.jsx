@@ -110,14 +110,16 @@ function BrainstormPreview({ data }) {
 }
 
 function ReportPreview({ data }) {
-    const dec = data?.decision_result || {};
+    const dec = data?.decision_results || data?.decision_result || data?.decision_verdict || {};
+    const decisionText = dec.decision || dec.verdict;
+    const confidenceVal = dec.confidence_score !== undefined ? dec.confidence_score : Math.round((dec.confidence || 0) * (dec.confidence <= 1 ? 100 : 1));
     return (
         <div className="space-y-3">
-            {dec.decision && (
+            {decisionText && (
                 <div className={cn("text-white rounded-lg px-3 py-1.5 text-xs font-bold inline-block",
-                    dec.decision === 'GO' ? 'bg-emerald-600' :
-                    dec.decision === 'PIVOT' ? 'bg-amber-500' : 'bg-rose-600')}>
-                    {dec.decision} — {Math.round((dec.confidence || 0) * 100)}% confidence
+                    decisionText === 'GO' ? 'bg-emerald-600' :
+                    decisionText === 'PIVOT' ? 'bg-amber-500' : 'bg-rose-600')}>
+                    {decisionText} — {confidenceVal}% confidence
                 </div>
             )}
             {data?.synthesis_output?.key_insights?.slice(0, 2).map((ins, i) => (

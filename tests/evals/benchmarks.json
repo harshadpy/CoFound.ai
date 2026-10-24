@@ -1,0 +1,26 @@
+[
+  {
+    "id": "scenario_01_biotech",
+    "name": "At-Home Saliva Cancer Screener",
+    "raw_text": "A direct-to-consumer kit that analyzes saliva biomarkers at home to detect early-stage cancers with 99% claimed accuracy, sold as a $29 monthly subscription.",
+    "expected_verdicts": ["KILL", "PIVOT"],
+    "required_flaws": ["FDA regulatory clearance", "clinical validation", "liability / false positives"],
+    "min_critic_penalty": -15
+  },
+  {
+    "id": "scenario_02_devtools",
+    "name": "B2B AI Code Review Assistant for GitHub Enterprise",
+    "raw_text": "An AI agent integrated with GitHub and GitLab that performs automated architectural and security code reviews on pull requests for Fortune 500 engineering teams.",
+    "expected_verdicts": ["GO", "PIVOT"],
+    "known_competitors": ["CodeRabbit", "Codium", "Qodo", "Snyk", "GitHub Copilot"],
+    "required_flaws": ["incumbent platform risk", "IP security / SOC2 compliance"]
+  },
+  {
+    "id": "scenario_03_hyperlocal",
+    "name": "On-Demand Jet Ski Delivery & Rental App",
+    "raw_text": "An Uber-like app where users can order a jet ski delivered to any public beach or lake within 30 minutes with an hourly rental fee.",
+    "expected_verdicts": ["KILL"],
+    "required_flaws": ["insurance liability", "extreme seasonality", "logistical asset wear"],
+    "min_critic_penalty": -20
+  }
+]

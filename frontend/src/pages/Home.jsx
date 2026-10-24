@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { Plus, Sparkles, X, Lightbulb, ArrowRight, Brain, BarChart2, Shield, Globe, Tag, Compass } from 'lucide-react';
+import { Plus, Sparkles, X, Lightbulb, ArrowRight, Brain, BarChart2, Shield, Globe, Tag, Compass, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -146,7 +146,19 @@ function TiltExampleCard({ item, onClick }) {
 }
 
 export default function Home() {
-    const { analysisInput, setAnalysisInput, contextTags, setContextTags, addTag, removeTag, startAnalysis, isGenerating, openHowToUse } = useStore();
+    const { 
+        analysisInput, 
+        setAnalysisInput, 
+        contextTags, 
+        setContextTags, 
+        addTag, 
+        removeTag, 
+        startAnalysis, 
+        isGenerating, 
+        openHowToUse,
+        hitlEnabled,
+        setHitlEnabled
+    } = useStore();
     const [tagInputs, setTagInputs] = useState({ industry: '', geo: '', segment: '' });
     const navigate = useNavigate();
     const toast = useToast();
@@ -197,8 +209,12 @@ export default function Home() {
         setTagInputs({ industry: '', geo: '', segment: '' });
 
         try {
-            await startAnalysis(effectiveTags);
-            navigate('/active-analysis');
+            const analysisId = await startAnalysis(effectiveTags);
+            if (analysisId) {
+                navigate(`/analysis/${analysisId}`);
+            } else {
+                navigate('/active-analysis');
+            }
         } catch (e) {
             alert("Failed to start analysis: " + e.message);
         }
@@ -391,15 +407,39 @@ export default function Home() {
                         </div>
 
                         {/* Action Strip */}
-                        <div className="bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-sm px-5 py-3 md:px-6 md:py-3.5 flex items-center justify-between border-t border-slate-100 dark:border-slate-700">
-                            <div className="flex items-center gap-2 text-xs md:text-sm text-slate-400 dark:text-slate-500 font-medium">
-                                <div className={cn(
-                                    "w-2 h-2 rounded-full transition-colors duration-500",
-                                    ready ? "bg-emerald-500 pulse-dot" : "bg-slate-300 dark:bg-slate-600"
-                                )} />
-                                <span className={cn("transition-colors", ready ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "")}>
-                                    {ready ? "Agents ready to launch" : "Describe your idea above…"}
-                                </span>
+                        <div className="bg-slate-50/80 dark:bg-slate-900/60 backdrop-blur-sm px-5 py-3 md:px-6 md:py-3.5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-700">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 text-xs md:text-sm text-slate-400 dark:text-slate-500 font-medium">
+                                    <div className={cn(
+                                        "w-2 h-2 rounded-full transition-colors duration-500",
+                                        ready ? "bg-emerald-500 pulse-dot" : "bg-slate-300 dark:bg-slate-600"
+                                    )} />
+                                    <span className={cn("transition-colors", ready ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "")}>
+                                        {ready ? "Agents ready to launch" : "Describe your idea above…"}
+                                    </span>
+                                </div>
+
+                                {/* Human-In-The-Loop Steering Toggle */}
+                                <button
+                                    type="button"
+                                    onClick={() => setHitlEnabled(!hitlEnabled)}
+                                    title="Pause after market research to review discovered competitors and steer the adversarial critic before final verdict"
+                                    className={cn(
+                                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all border",
+                                        hitlEnabled 
+                                            ? "bg-blue-50 dark:bg-blue-950/70 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 shadow-xs"
+                                            : "bg-transparent border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    )}
+                                >
+                                    <UserCheck className={cn("w-3.5 h-3.5", hitlEnabled ? "text-blue-600 dark:text-blue-400" : "text-slate-400")} />
+                                    <span>Interactive HITL Steering</span>
+                                    <span className={cn(
+                                        "ml-0.5 px-1 py-0.2 rounded text-[10px] font-bold uppercase tracking-wider",
+                                        hitlEnabled ? "bg-blue-200/60 dark:bg-blue-900/80 text-blue-800 dark:text-blue-200" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+                                    )}>
+                                        {hitlEnabled ? "ON" : "OFF"}
+                                    </span>
+                                </button>
                             </div>
 
                             <button

@@ -43,13 +43,38 @@ CoFound.ai includes a pre-configured [`render.yaml`](./render.yaml):
 
 ---
 
-## 🗄️ Database & Supabase Migration
+## 🗄️ Database & Supabase Auth Setup
 
-To set up cloud sync, public report permalinks, and BYOK user keys:
+CoFound.ai uses **Supabase only** for cloud data persistence and email/password authentication (no third-party OAuth providers).
 
+### 1. Database Schema
 1. Open your Supabase project's **SQL Editor**.
 2. Run the script in [**`infra/supabase_schema.sql`**](./infra/supabase_schema.sql).
-3. Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in your production environment variables.
+
+### 2. Supabase Auth Configuration (Dashboard)
+1. Go to **Authentication** ➔ **Providers** ➔ Ensure **Email** is **Enabled**.
+2. Go to **Authentication** ➔ **URL Configuration** ➔ Set **Site URL** to your deployment domain (e.g., `https://your-app.onrender.com`).
+3. *(Optional for Instant Frictionless Testing)*: Under **Authentication** ➔ **Email Templates** / **Auth Settings**, toggle **Confirm email** off if you wish founders to log in immediately upon signup without verifying their inbox.
+
+### 3. Required Environment Variables
+Add these keys to your `.env` or cloud dashboard (Render, Railway, Fly.io, etc.):
+
+```bash
+# Supabase Project Credentials (Found in Project Settings -> API)
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="eyJhbGciOi..."
+SUPABASE_PUBLISHABLE_KEY="sb_publishable_..."
+
+# Centralized Free Access & Quota Control
+BILLING_ENABLED=false        # Makes all features and Pro reports 100% free
+GUEST_ANALYSIS_LIMIT=5       # Free analyses for unauthenticated guests before signup
+USER_ANALYSIS_LIMIT=50       # Quota per registered founder account
+```
+
+### 4. GPT-Style Authentication & Guest Migration Flow
+- **Guest Mode:** First-time users can immediately try the application without signing up. A secure guest ID (`guest_<hex>`) is issued automatically.
+- **Guest-to-User Migration:** When a guest founder signs up or logs in, all past analyses, bookmarks, and notifications automatically migrate to their registered Supabase account.
+- **Free Pro Access:** `BILLING_ENABLED=false` guarantees that all users receive full access to 11-agent autonomous swarm reports, HITL steering, and ideation tools without payment paywalls.
 
 ---
 

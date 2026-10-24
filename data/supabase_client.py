@@ -1,4 +1,7 @@
 import os
+import json
+import hashlib
+import secrets
 from typing import Dict, Any, List, Optional
 import structlog
 from config.config import settings
@@ -232,9 +235,6 @@ def create_shared_report_in_supabase(share_data: Dict[str, Any]) -> Optional[Dic
     except Exception as e:
         logger.error("Supabase create_shared_report failed", error=str(e))
         return None
-    except Exception as e:
-        logger.error("Supabase create_shared_report failed", error=str(e))
-        return None
 
 def get_shared_report_from_supabase(token: str) -> Optional[Dict[str, Any]]:
     client = get_supabase_client()
@@ -250,3 +250,57 @@ def get_shared_report_from_supabase(token: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         logger.error("Supabase get_shared_report failed", error=str(e))
         return None
+
+# ── Password Security & Cryptography ──────────────────────────────────────────
+def hash_password(password: str) -> str:
+    """Computes a cryptographically salted PBKDF2-SHA256 password hash."""
+    salt = secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), 100_000)
+    return f"{salt}:{key.hex()}"
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verifies a plaintext password against a stored PBKDF2-SHA256 hash."""
+    try:
+        if not hashed or ":" not in hashed:
+            return False
+        salt, key_hex = hashed.split(":", 1)
+        test_key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), 100_000)
+        return secrets.compare_digest(test_key.hex(), key_hex)
+    except Exception:
+        return False
+
+# ── Guest-to-User Data Migration ─────────────────────────────────────────────
+def migrate_supabase_user_data(old_user_id: str, new_user_id: str) -> Dict[str, int]:
+    """
+    Transfers all cloud-persisted records (analyses, saved insights, notifications)
+    from a temporary guest session ID to a newly authenticated founder account.
+    """
+    client = get_supabase_client()
+    stats = {"analyses": 0, "saved_insights": 0, "notifications": 0}
+    if not client or not old_user_id or not new_user_id or old_user_id == new_user_id:
+        return stats
+
+    # 1. Migrate cloud analyses
+    try:
+        res1 = client.table("analyses").update({"user_id": new_user_id}).eq("user_id", old_user_id).execute()
+        stats["analyses"] = len(res1.data) if res1.data else 0
+    except Exception as e:
+        logger.warning("Supabase migrate analyses error", error=str(e))
+
+    # 2. Migrate saved insights & bookmarks
+    try:
+        res2 = client.table("saved_insights").update({"user_id": new_user_id}).eq("user_id", old_user_id).execute()
+        stats["saved_insights"] = len(res2.data) if res2.data else 0
+    except Exception as e:
+        logger.warning("Supabase migrate saved_insights error", error=str(e))
+
+    # 3. Migrate notifications
+    try:
+        res3 = client.table("notifications").update({"user_id": new_user_id}).eq("user_id", old_user_id).execute()
+        stats["notifications"] = len(res3.data) if res3.data else 0
+    except Exception as e:
+        logger.warning("Supabase migrate notifications error", error=str(e))
+
+    logger.info("Guest data migrated in Supabase", from_user=old_user_id, to_user=new_user_id, stats=stats)
+    return stats
+

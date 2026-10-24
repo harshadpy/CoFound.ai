@@ -20,5 +20,7 @@ structlog>=24.0.0
 markdown>=3.6.0
 sqlalchemy>=2.0.0
 supabase>=2.0.0
+langgraph-checkpoint-sqlite>=3.1.0
+aiosqlite>=0.20.0
 
 

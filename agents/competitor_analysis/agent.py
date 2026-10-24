@@ -19,11 +19,15 @@ class CompetitorProfile(BaseModel):
     key_features: List[str] = Field(default_factory=list, description="Main product features")
     strengths: List[str] = Field(default_factory=list, description="Competitive advantages")
     weaknesses: List[str] = Field(default_factory=list, description="Gaps or limitations")
+    differentiation_angle: Optional[str] = Field(default=None, description="Specific wedge or angle to out-position this rival")
 
 class CompetitorOutput(BaseModel):
     direct_competitors: List[CompetitorProfile] = Field(description="Companies offering similar solutions")
     indirect_competitors: List[CompetitorProfile] = Field(description="Alternative solutions to the same problem")
     saturation_score: int = Field(description="Market saturation 1-10, 10 being extremely saturated")
+    market_gaps: List[str] = Field(default_factory=list, description="Specific market gaps, unaddressed customer workflows, or pricing voids")
+    differentiation_playbook: List[str] = Field(default_factory=list, description="Concrete strategic differentiation vectors for a new entrant")
+    defensibility_assessment: Optional[str] = Field(default=None, description="Analysis of incumbent moats and barrier to entry")
     market_insights: str = Field(description="Overall competitive landscape summary")
 
 def competitor_node(state: AgentState) -> dict:
@@ -104,7 +108,7 @@ def competitor_node(state: AgentState) -> dict:
     )
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", f"""You are a Competitor Analyst. Analyze search results to identify competitors with detailed profiles.{geo_synthesis_rule}
+        ("system", f"""You are a Competitive Strategy Analyst. Analyze search results to evaluate incumbents and uncover structural market opportunities.{geo_synthesis_rule}
 
 For each competitor, provide:
 - Company name and description
@@ -114,11 +118,17 @@ For each competitor, provide:
 - Estimated team size (if available)
 - Key features of their product/service
 - Competitive strengths (what they do well)
-- Weaknesses or gaps (opportunities for differentiation)
+- Weaknesses or gaps (limitations or customer complaints)
+- Specific differentiation angle (how a startup can win against this specific player)
 
-Identify 3-5 DIRECT competitors (similar solution) and 2-3 INDIRECT competitors (alternative approaches).
-Rate market saturation 1-10 based on number and strength of competitors.
-Provide market insights summary.
+STRATEGIC MARKET GAPS & DIFFERENTIATION:
+- Identify 2-4 concrete MARKET GAPS: unserved personas, price tier vacuums, high-friction legacy workflows, or missing product integrations in the market.
+- Formulate 2-4 DIFFERENTIATION PLAYBOOK vectors: actionable ways the new startup can counter-position (e.g., vertical workflow specialization, 10x faster time-to-value, transparent pricing, API-first architecture).
+- Assess defensibility: what moats do incumbents have and how can they be bypassed?
+
+Identify 3-5 DIRECT competitors and 2-3 INDIRECT competitors.
+Rate market saturation 1-10 based on competitor density and capital raised.
+Provide a sharp, evidence-backed market insights summary.
 
 {{format_instructions}}"""),
         ("user", "Idea: {core_idea}\nTarget Geography: {geography}\nSearch Context:\n{search_results}")

@@ -45,20 +45,38 @@ def copilot_chat(req: CopilotChatRequest):
             raw_text = analysis.get("raw_text", "")
             context_title = result.get("title") or raw_text[:50]
             
-            # Extract key findings
-            summary = result.get("executive_summary") or result.get("summary") or ""
-            decision = result.get("decision", {})
-            critic = result.get("critic", {})
-            competitors = result.get("competitors", [])
+            # Extract key findings from modern swarm results or legacy schema
+            synthesis = result.get("synthesis_results") or {}
+            decision = result.get("decision_results") or result.get("decision") or {}
+            critic = result.get("critic_results") or result.get("critic") or {}
+            competitor_data = result.get("competitor_results") or {}
+            
+            summary = (
+                synthesis.get("executive_summary") or
+                result.get("executive_summary") or
+                result.get("summary") or
+                ""
+            )
+            verdict = decision.get("decision") or decision.get("verdict", "N/A")
+            confidence = decision.get("confidence_score", "N/A")
+            survival = critic.get("survival_probability", "N/A")
+            fatal_flaws = critic.get("fatal_flaws") or []
+            
+            raw_comps = (
+                competitor_data.get("direct_competitors") or
+                result.get("competitors") or
+                []
+            )
+            comp_names = [c.get("name") if isinstance(c, dict) else str(c) for c in raw_comps[:5]]
             
             context_text = f"""
 CURRENT STARTUP REPORT DOSSIER:
 - Title / Concept: {context_title}
 - Executive Summary: {summary}
-- Recommendation: {decision.get('verdict', 'N/A')} (Confidence: {decision.get('confidence_score', 'N/A')}%)
-- 2-Year Survival Probability: {critic.get('survival_probability', 'N/A')}%
-- Fatal Flaws identified: {json.dumps(critic.get('fatal_flaws', []))}
-- Key Competitors: {json.dumps([c.get('name') if isinstance(c, dict) else str(c) for c in competitors[:5]])}
+- Recommendation: {verdict} (Confidence: {confidence}%)
+- 2-Year Survival Probability: {survival}%
+- Fatal Flaws identified: {json.dumps(fatal_flaws)}
+- Key Competitors: {json.dumps(comp_names)}
 """
 
     system_prompt = f"""You are the CoFound.ai Executive Strategic Copilot — a seasoned Y-Combinator partner and veteran venture capitalist.

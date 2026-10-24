@@ -1,8 +1,11 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from sqlalchemy import create_engine, Column, String, Integer, Text, JSON, DateTime, desc
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
+
+def utcnow():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 DB_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(DB_DIR, "cofound.db")
@@ -43,8 +46,8 @@ class AnalysisRecord(Base):
     agent_metrics = Column(JSON, default=dict)
     result = Column(JSON, nullable=True)
     error = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -84,8 +87,8 @@ def create_analysis(
             progress_percentage=0,
             agent_statuses=dict(DEFAULT_AGENT_STATUSES),
             agent_metrics={},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=utcnow(),
+            updated_at=utcnow()
         )
         session.add(record)
         session.commit()
@@ -108,7 +111,7 @@ def update_analysis_status(
         if not record:
             return None
         record.status = status
-        record.updated_at = datetime.utcnow()
+        record.updated_at = utcnow()
         if error is not None:
             record.error = error
         if result is not None:
@@ -162,7 +165,7 @@ def update_agent_progress(
         total_nodes = len(DEFAULT_AGENT_STATUSES)
         completed_nodes = sum(1 for s in statuses.values() if s == "completed")
         record.progress_percentage = int((completed_nodes / total_nodes) * 100)
-        record.updated_at = datetime.utcnow()
+        record.updated_at = utcnow()
 
         session.commit()
         session.refresh(record)
@@ -179,25 +182,51 @@ def get_analysis(analysis_id: str) -> Optional[Dict[str, Any]]:
     finally:
         session.close()
 
-def list_analyses(limit: int = 50) -> List[Dict[str, Any]]:
-    """Returns past analyses ordered by created_at descending."""
+def list_analyses(limit: int = 50, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Returns past analyses ordered by created_at descending, optionally filtered by user_id."""
     session = SessionLocal()
     try:
-        records = session.query(AnalysisRecord).order_by(desc(AnalysisRecord.created_at)).limit(limit).all()
+        query = session.query(AnalysisRecord)
+        if user_id:
+            query = query.filter(AnalysisRecord.user_id == user_id)
+        records = query.order_by(desc(AnalysisRecord.created_at)).limit(limit).all()
         return [r.to_dict() for r in records]
     finally:
         session.close()
 
-def delete_analysis(analysis_id: str) -> bool:
-    """Deletes an analysis record by ID. Returns True if deleted, False if not found."""
+def delete_analysis(analysis_id: str, user_id: Optional[str] = None) -> bool:
+    """Deletes an analysis record by ID. Enforces ownership if user_id is provided."""
     session = SessionLocal()
     try:
-        record = session.query(AnalysisRecord).filter(AnalysisRecord.id == analysis_id).first()
+        query = session.query(AnalysisRecord).filter(AnalysisRecord.id == analysis_id)
+        if user_id and user_id != "admin":
+            query = query.filter(AnalysisRecord.user_id == user_id)
+        record = query.first()
         if not record:
             return False
         session.delete(record)
         session.commit()
         return True
+    finally:
+        session.close()
+
+def count_user_analyses(user_id: str) -> int:
+    """Counts total analyses run by a user or guest for quota verification."""
+    session = SessionLocal()
+    try:
+        return session.query(AnalysisRecord).filter(AnalysisRecord.user_id == user_id).count()
+    finally:
+        session.close()
+
+def migrate_analyses_user(old_user_id: str, new_user_id: str) -> int:
+    """Migrates all SQLite analysis records from a guest ID to an authenticated user ID."""
+    session = SessionLocal()
+    try:
+        count = session.query(AnalysisRecord).filter(AnalysisRecord.user_id == old_user_id).update(
+            {AnalysisRecord.user_id: new_user_id}
+        )
+        session.commit()
+        return count
     finally:
         session.close()
 

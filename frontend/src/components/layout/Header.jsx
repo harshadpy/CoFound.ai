@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Bell, HelpCircle, ChevronRight, Home, Command, X,
-    CheckCircle, MessageCircle, FileText, Menu
+    CheckCircle, MessageCircle, FileText, Menu, LogIn
 } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
@@ -18,7 +18,9 @@ export function Header() {
         fetchNotifications,
         markNotificationRead,
         markAllNotificationsRead,
-        openCopilot
+        openCopilot,
+        user,
+        openAuthModal
     } = useStore();
 
     const [showNotifications, setShowNotifications] = useState(false);
@@ -126,6 +128,18 @@ export function Header() {
 
             {/* Right — actions */}
             <div className="flex items-center gap-2 shrink-0">
+                {/* Guest Mode Indicator & Sign In */}
+                {(!user || user?.is_guest) && (
+                    <button
+                        onClick={openAuthModal}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                        title="Sign In to Save Your Work"
+                    >
+                        <LogIn className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Sign In</span>
+                    </button>
+                )}
+
                 {/* Strategic Copilot Quick Button */}
                 <button
                     onClick={openCopilot}

@@ -24,6 +24,12 @@ class AgentState(TypedDict):
     synthesis_results: Optional[Dict[str, Any]]
     decision_results: Optional[Dict[str, Any]]
     
+    # Human-In-The-Loop Steering & Verification
+    hitl_enabled: Optional[bool]
+    hitl_feedback: Optional[Dict[str, Any]]
+    grounding_verifications: Optional[List[Dict[str, Any]]]
+    token_metrics: Optional[Dict[str, Any]]
+
     # Final Output
     final_report_md: Optional[str]
     final_report_html: Optional[str]

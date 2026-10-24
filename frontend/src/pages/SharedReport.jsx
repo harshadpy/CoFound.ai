@@ -62,9 +62,13 @@ export default function SharedReport() {
 
     const analysis = data.analysis || {};
     const result = analysis.result || {};
-    const decision = result.decision_verdict || result.decision || {};
+    const decision = result.decision_results || result.decision_verdict || result.decision || {};
     const critic = result.critic_results || result.critic || {};
     const structured = result.structured_thought || {};
+    const validation = result.validation_results || {};
+    const competitors = result.competitor_results || {};
+    const feasibility = result.feasibility_results || {};
+    const trends = result.trend_results || {};
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-[#07090e] text-slate-900 dark:text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
@@ -125,11 +129,16 @@ export default function SharedReport() {
                             <Award className="w-4 h-4 text-indigo-500" />
                         </div>
                         <div className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">
-                            {decision.verdict || "VALIDATED"}
+                            {decision.verdict || decision.decision || "VALIDATED"}
                         </div>
                         <p className="text-xs text-slate-600 dark:text-slate-400">
                             Decision Engine calculated a <strong>{decision.confidence_score || 85}% confidence score</strong> based on multi-source market signals.
                         </p>
+                        {decision.reasoning && (
+                            <p className="text-xs text-slate-700 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                {decision.reasoning}
+                            </p>
+                        )}
                     </div>
 
                     {/* Critic Survival Probability */}
@@ -144,15 +153,82 @@ export default function SharedReport() {
                         <p className="text-xs text-slate-600 dark:text-slate-400">
                             Adversarial Critic stress-test penalty: {critic.confidence_penalty ? `${critic.confidence_penalty} pts` : "-12 pts"}.
                         </p>
+                        {critic.uncertainty_rationale && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                {critic.uncertainty_rationale}
+                            </p>
+                        )}
                     </div>
                 </div>
+
+                {/* Sourced Market Signals */}
+                {validation.validation_points?.length > 0 && (
+                    <div className="bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+                        <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            Sourced Customer Pain Points &amp; Market Evidence
+                        </h3>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                            {validation.validation_points.slice(0, 4).map((pt, idx) => {
+                                const isVerified = pt.evidence_type === 'verified_finding' || (pt.sources && pt.sources.length > 0);
+                                return (
+                                    <div key={idx} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-bold text-slate-900 dark:text-white">{pt.user_segment}</span>
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isVerified ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'}`}>
+                                                {isVerified ? 'Verified Finding' : 'Hypothesis'}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-slate-600 dark:text-slate-300">{pt.pain_point}</p>
+                                        {pt.quote && <p className="text-[11px] italic text-slate-500">"{pt.quote}"</p>}
+                                        <div className="text-[10px] text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-800 flex justify-between">
+                                            <span>Severity: <strong>{pt.severity}/10</strong></span>
+                                            <span>WTP: <strong>{pt.willingness_to_pay}</strong></span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* Market Gaps & Unit Economics */}
+                {(competitors.market_gaps?.length > 0 || feasibility.monetization_model) && (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        {competitors.market_gaps?.length > 0 && (
+                            <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Identified Market Gaps</span>
+                                <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
+                                    {competitors.market_gaps.map((g, i) => (
+                                        <li key={i} className="flex items-start gap-2">
+                                            <span className="text-amber-500 font-bold">•</span>
+                                            <span>{g}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                        {feasibility.monetization_model && (
+                            <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5">
+                                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Unit Economics &amp; Monetization</span>
+                                <div className="text-sm font-bold text-slate-900 dark:text-white">{feasibility.monetization_model}</div>
+                                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400 pt-2">
+                                    <div>CAC: <strong className="text-slate-900 dark:text-white">{feasibility.estimated_cac_range || 'N/A'}</strong></div>
+                                    <div>LTV: <strong className="text-slate-900 dark:text-white">{feasibility.estimated_ltv_range || 'N/A'}</strong></div>
+                                    <div>Margin: <strong className="text-emerald-600 dark:text-emerald-400">{feasibility.target_gross_margin || '75%+'}</strong></div>
+                                    <div>Payback: <strong className="text-slate-900 dark:text-white">{feasibility.payback_period_months ? `${feasibility.payback_period_months} mo` : 'N/A'}</strong></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Fatal Flaws & VC Teardown */}
                 {critic.fatal_flaws && critic.fatal_flaws.length > 0 && (
                     <div className="bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
                         <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4 text-rose-500" />
-                            Critical Structural Risks & Fatal Flaws
+                            Critical Structural Risks &amp; Fatal Flaws
                         </h3>
                         <div className="grid gap-2.5">
                             {critic.fatal_flaws.map((flaw, idx) => (

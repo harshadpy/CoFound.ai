@@ -12,14 +12,19 @@ class TrendItem(BaseModel):
     trend: str = Field(description="Trend name")
     description: str = Field(description="Detailed explanation")
     impact: str = Field(description="How it affects the market")
-    timeframe: str = Field(description="When this trend is emerging/maturing")
+    timeframe: str = Field(description="When this trend is emerging/maturing (e.g., '2024-2026', 'Mature')")
     relevance_score: int = Field(description="Relevance to the idea, 1-10")
+    sources: List[dict] = Field(default_factory=list, description="Citations or reference URLs from market research with headline and url")
 
 class TrendOutput(BaseModel):
+    market_definition: str = Field(description="Precise category boundary and geography definition for the TAM (e.g. 'Global B2B AI Workflow Automation Market')")
+    market_size_estimate: str = Field(description="Current market size estimate specifying base year and currency (e.g. '$6.8B in 2024')")
+    market_growth_cagr: str = Field(description="Projected CAGR percentage with explicit forecast period (e.g. '15.4% CAGR (2024-2030)')")
+    cagr_methodology: str = Field(description="Transparent calculation basis showing baseline value, target year projection, and underlying growth drivers")
+    market_sources: List[str] = Field(default_factory=list, description="Credible industry analyst or market research references (e.g. 'Grand View Research (2024)', 'Statista', 'Gartner')")
+    uncertainty_factors: List[str] = Field(default_factory=list, description="Key macroeconomic, technology, or regulatory risks that could impact growth projections")
     macro_trends: List[TrendItem] = Field(description="Broad industry/market trends")
     micro_trends: List[TrendItem] = Field(description="Niche or emerging patterns")
-    market_size_estimate: str = Field(description="Current market size estimate")
-    market_growth_cagr: str = Field(description="Projected CAGR percentage")
     key_drivers: List[str] = Field(description="Main factors driving growth")
 
 def trend_node(state: AgentState) -> dict:
@@ -41,7 +46,7 @@ def trend_node(state: AgentState) -> dict:
     # Step 1: Generate Search Queries
     geo_hint = f" The focus is on the {geography} market." if geography and geography.lower() != "global" else ""
     query_prompt = ChatPromptTemplate.from_messages([
-        ("system", f"You are a Trends Analyst. Generate 3 specific search queries to find emerging trends and CAGR for this sector.{geo_hint}"),
+        ("system", f"You are a Trends & Market Sizing Analyst. Generate 3 specific search queries to find emerging trends, TAM estimates, credible research reports, and CAGR for this sector.{geo_hint}"),
         ("user", "Sector: {sector}\nIdea: {core_idea}\nTarget Market: {geography}")
     ])
     
@@ -54,9 +59,9 @@ def trend_node(state: AgentState) -> dict:
     ][:3]
     if not queries:
         if geography and geography.lower() != "global":
-            queries = [f"{sector} market trends in {geography} 2025", f"{sector} market growth CAGR {geography}", f"emerging tech in {sector} {geography}"]
+            queries = [f"{sector} market size TAM CAGR in {geography} 2025 report", f"{sector} industry growth forecast {geography}", f"emerging tech trends in {sector} {geography}"]
         else:
-            queries = [f"{sector} market trends 2025", f"{sector} market growth CAGR", f"emerging tech in {sector}"]
+            queries = [f"{sector} market size TAM CAGR 2025 report", f"{sector} market growth forecast", f"emerging tech trends in {sector}"]
 
     logger.info("generated_queries", queries=queries, geography=geography)
 
@@ -73,29 +78,31 @@ def trend_node(state: AgentState) -> dict:
 
     # Step 3: Analysis
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a Future Signal Analyst. Analyze search results to identify market trends with specific metrics.
+        ("system", """You are a Senior Market Intelligence & Quantitative Forecasting Analyst.
+Analyze search results to identify market trends with rigorous, transparent market sizing and CAGR metrics.
 
-For each trend, provide:
-- Trend name and detailed description
-- Impact on the market/industry
-- Timeframe (emerging, growing, mature)
-- Relevance score 1-10 for this specific idea
-
-Also provide:
-- Market size estimate (e.g., "$5B in 2024")
-- CAGR percentage (e.g., "15% CAGR 2024-2029")
-- Key growth drivers
-
-Identify 3-5 MACRO trends (broad industry) and 2-4 MICRO trends (niche patterns).
+METHODOLOGICAL REQUIREMENTS:
+1. CONSISTENT MARKET DEFINITION:
+   - Formulate a precise, unambiguous definition of the target TAM boundary in `market_definition`.
+2. CREDIBLE SOURCES & TRANSPARENT CALCULATIONS:
+   - State the market size estimate with base year and currency (e.g. '$5.2B in 2024').
+   - State the projected CAGR with timeline (e.g. '14.8% CAGR (2024-2030)').
+   - In `cagr_methodology`, provide transparent calculation logic showing base year value, forecast year value, and rationale.
+   - In `market_sources`, cite credible industry reports (e.g. Gartner, Grand View Research, Statista, IDC, McKinsey) from search or industry standards.
+   - In `uncertainty_factors`, identify 2-3 variables that could alter these projections (e.g., enterprise IT budget compression, regulatory shifts).
+3. TRENDS:
+   - Identify 3-4 MACRO trends (broad market shifts) and 2-3 MICRO trends (tactical/niche signals).
+   - If search results mention specific articles or URLs, include them in `sources`.
 
 {format_instructions}"""),
-        ("user", "Idea: {core_idea}\nSector: {sector}\nSearch Context: {search_results}")
+        ("user", "Idea: {core_idea}\nSector: {sector}\nGeography: {geography}\nSearch Context: {search_results}")
     ])
 
     try:
         result = (prompt | model | parser).invoke({
             "sector": sector,
             "core_idea": core_idea,
+            "geography": geography,
             "search_results": combined_results,
             "format_instructions": parser.get_format_instructions()
         })

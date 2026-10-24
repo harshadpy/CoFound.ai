@@ -4,6 +4,9 @@ Test verifying geographic awareness (e.g. India vs US) and enhanced ideation var
 import sys
 import os
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from agents.thought_structuring.agent import thought_structuring_node

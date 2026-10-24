@@ -12,7 +12,7 @@ import { EmptyState, Button, useToast } from '../components/ui';
 
 export default function AnalysisHistory() {
     const navigate = useNavigate();
-    const { setAnalysisInput, fetchAndSaveReport } = useStore();
+    const { user, openAuthModal, setAnalysisInput, fetchAndSaveReport } = useStore();
     const [analyses, setAnalyses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -22,7 +22,8 @@ export default function AnalysisHistory() {
     const loadAnalyses = async () => {
         try {
             setLoading(true);
-            const res = await fetch(apiUrl('/api/analyses'));
+            const userId = user?.id || 'default_user';
+            const res = await fetch(apiUrl(`/api/analyses?user_id=${encodeURIComponent(userId)}`));
             if (res.ok) {
                 const data = await res.json();
                 setAnalyses(data || []);
@@ -36,7 +37,7 @@ export default function AnalysisHistory() {
 
     useEffect(() => {
         loadAnalyses();
-    }, []);
+    }, [user?.id]);
 
     const toast = useToast();
 
@@ -46,7 +47,8 @@ export default function AnalysisHistory() {
         
         try {
             setDeletingId(id);
-            const res = await fetch(apiUrl(`/api/analyses/${id}`), { method: 'DELETE' });
+            const userId = user?.id || 'default_user';
+            const res = await fetch(apiUrl(`/api/analyses/${id}?user_id=${encodeURIComponent(userId)}`), { method: 'DELETE' });
             if (res.ok) {
                 setAnalyses(prev => prev.filter(a => a.id !== id));
                 toast('Analysis deleted successfully', 'info');
@@ -147,6 +149,34 @@ export default function AnalysisHistory() {
                     New Analysis
                 </button>
             </div>
+
+            {/* Guest Session vs Permanent Account Banner */}
+            {user?.is_guest ? (
+                <div className="mb-6 p-4 rounded-2xl bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-start sm:items-center gap-3">
+                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0 mt-1 sm:mt-0 animate-pulse" />
+                        <div>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                Guest Session History
+                            </p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                Analyses created during this session are clean and individual. Sign in to permanently save your analyses to your account.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={openAuthModal}
+                        className="self-start sm:self-auto shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                        <span>Save Analyses & Sign In</span>
+                    </button>
+                </div>
+            ) : (
+                <div className="mb-6 p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-900/30 flex items-center gap-2.5 text-xs text-emerald-400 shadow-xs">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <span><strong>Cloud Account Active:</strong> All past analyses are securely stored and synced to your founder account.</span>
+                </div>
+            )}
 
             {/* Search & Filter Controls */}
             <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">

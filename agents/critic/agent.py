@@ -13,15 +13,19 @@ class CriticOutput(BaseModel):
     challenged_assumptions: List[str] = Field(description="Key founder assumptions proven weak or unvalidated by research")
     confidence_penalty: int = Field(description="Adversarial penalty points to deduct from overall confidence (negative integer between -5 and -30)")
     survival_probability: int = Field(description="Realistic 2-year survival probability percentage (0-100)")
+    uncertainty_rationale: str = Field(description="Transparent explanation of key assumptions, data limitations, and sources of uncertainty")
+    critical_risk_factors: List[str] = Field(default_factory=list, description="Top 3-4 specific market, capital, or execution risks")
     harsh_feedback: str = Field(description="Brutally honest, institutional-grade VC teardown of the idea")
     counter_arguments: List[str] = Field(description="Strongest counter-arguments why an investor would say NO")
+
+from utils.model_router import get_routed_model, ModelRole
 
 def critic_node(state: AgentState) -> dict:
     """
     Phase 4 Adversarial Guardrail: Runs strictly AFTER synthesis and parallel research.
     Critiques the synthesized market findings and applies a quantitative confidence penalty.
     """
-    model = ChatOpenAI(model=settings.model_fast, api_key=settings.openai_api_key, temperature=0.2)
+    model = get_routed_model(ModelRole.CRITIC, temperature=0.2)
     parser = JsonOutputParser(pydantic_object=CriticOutput)
 
     structured = state.get("structured_thought", {})
@@ -43,20 +47,20 @@ def critic_node(state: AgentState) -> dict:
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are a Skeptical Tier-1 Venture Capitalist and Tough Board Member.
-Your mandate is to tear down this startup hypothesis by ruthlessly stress-testing the research findings.
+Your mandate is to tear down this startup hypothesis by ruthlessly stress-testing the research findings and identifying unverified assumptions.
 
-Analyze the research evidence:
-- Are the competitors already too dominant or entrenched?
-- Is the user willingness-to-pay convincing or merely lukewarm?
-- Are the technical build complexities or hidden costs understated?
-- Are the founder's core assumptions unsupported by the web data?
+CRITICAL RIGOR & UNCERTAINTY GUIDELINES:
+- Avoid fabricated statistics and unjustified pseudo-precision. Ground all skepticism in the research dossier.
+- In `uncertainty_rationale`: explicitly articulate the core hypotheses being taken on faith, what data remains unverified, and the real-world variance in early-stage survival.
+- In `challenged_assumptions`: highlight founder assumptions that lack web or customer evidence.
+- In `fatal_flaws`: call out the 2-4 existential structural blockers (e.g., CAC/LTV imbalance, distribution bottlenecks, platform dependency, entrenched incumbents).
 
-Calculate a 'confidence_penalty':
+Calculate `confidence_penalty`:
 - A negative integer between -5 and -30 reflecting how dangerous the unresolved risks are.
-- Example: If competitors are heavily entrenched and willingness-to-pay is low, penalty should be -20 to -30.
-- If risks are standard and manageable, penalty should be -5 to -10.
+- Penalty should be -20 to -30 if incumbents dominate or willingness-to-pay is speculative.
+- Penalty should be -5 to -15 if risks are standard and manageable.
 
-Provide an unvarnished, direct analysis without diplomatic sugarcoating.
+Provide an unvarnished, direct teardown without diplomatic sugarcoating.
 {format_instructions}"""),
         ("user", "Full Research Dossier & Synthesis:\n{signals_json}")
     ])
