@@ -98,3 +98,23 @@ Thumbs.db
 # Scratch & Large Temporary Assets
 image*.png
 screenshot*.png
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+frontend/public/tmp.png
+vite.config.js.timestamp-*
+
+# IDE & Editor Local Configs
+.vscode/
+.idea/
+.obsidian/
+*.code-workspace
+
+# Build & Runtime Artifacts
+dist/
+build/
+*.tsbuildinfo
+
