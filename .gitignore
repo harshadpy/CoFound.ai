@@ -6,7 +6,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
+/dist/
 downloads/
 eggs/
 .eggs/
@@ -51,8 +51,10 @@ htmlcov/
 node_modules/
 **/node_modules/
 frontend/node_modules/
-frontend/dist/
-dist/
+# frontend/dist/ tracked for single-service full-stack deployment
+/dist/
+!frontend/dist/
+!frontend/dist/**
 .vite/
 
 # NPM / Yarn / PNPM logs
@@ -114,20 +116,10 @@ vite.config.js.timestamp-*
 *.code-workspace
 
 # Build & Runtime Artifacts
-dist/
+/dist/
 build/
 *.tsbuildinfo
-
-# ── Deployment & Cloud Configurations (Hidden) ──
-DEPLOYMENT.md
-Dockerfile
-docker-compose.yml
-docs/deployment_guide.md
-netlify.toml
-render.yaml
-runtime.txt
-vercel.json
-frontend/vercel.json
-frontend/public/_redirects
+!frontend/dist/
+!frontend/dist/**
 
 

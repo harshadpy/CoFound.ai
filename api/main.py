@@ -86,7 +86,7 @@ if os.path.exists(FRONTEND_DIST):
         
         # If client is requesting JSON at root (e.g. API health probes, curl, test clients)
         accept = request.headers.get("accept", "")
-        if (full_path == "" or full_path == "/") and ("application/json" in accept or "text/html" not in accept):
+        if (full_path == "" or full_path == "/") and ("application/json" in accept and "text/html" not in accept):
             return {
                 "status": "ok",
                 "service": "CoFound.ai Modular Backend",
