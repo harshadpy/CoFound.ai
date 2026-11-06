@@ -183,6 +183,7 @@ export const useStore = create((set, get) => ({
     uploadProgress: 0,
     currentAnalysisId: loadActiveAnalysisId(),
     analysisStatus: "idle",
+    analysisError: null,
     analysisResult: loadPersistedResult(),
     agentStatuses: {},
     agentMetrics: {},
@@ -193,7 +194,7 @@ export const useStore = create((set, get) => ({
     setHitlReviewData: (data) => set({ hitlReviewData: data }),
 
     startAnalysis: async (customTags = null) => {
-        set({ isGenerating: true, uploadProgress: 10, analysisStatus: "pending", hitlReviewData: null });
+        set({ isGenerating: true, uploadProgress: 10, analysisStatus: "pending", analysisError: null, hitlReviewData: null });
         try {
             const { analysisInput, contextTags, hitlEnabled } = get();
             const effectiveTags = customTags || contextTags;
@@ -239,7 +240,7 @@ export const useStore = create((set, get) => ({
             return data.analysis_id;
         } catch (error) {
             console.error("startAnalysis error:", error);
-            set({ isGenerating: false, analysisStatus: "failed" });
+            set({ isGenerating: false, analysisStatus: "failed", analysisError: error.message || "Failed to start analysis." });
             throw error;
         }
     },
@@ -262,7 +263,7 @@ export const useStore = create((set, get) => ({
                 set({ analysisStatus: "awaiting_review", isGenerating: false });
                 return "awaiting_review";
             } else if (data.status === "failed") {
-                set({ analysisStatus: "failed", isGenerating: false });
+                set({ analysisStatus: "failed", isGenerating: false, analysisError: data.error || "Swarm analysis encountered an error." });
                 return "failed";
             } else if (data.status === "running") {
                 set({ 
@@ -299,6 +300,8 @@ export const useStore = create((set, get) => ({
             updates.analysisStatus = 'completed';
         } else if (data.type === 'failed') {
             updates.analysisStatus = 'failed';
+            updates.analysisError = data.error || 'Swarm analysis encountered an error.';
+            updates.isGenerating = false;
         } else if (data.type === 'status_change' && data.status) {
             updates.analysisStatus = data.status;
             if (data.status === 'awaiting_review') {

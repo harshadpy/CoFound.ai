@@ -57,7 +57,7 @@ def validation_node(state: AgentState) -> dict:
     
     logger.info("validation_started", problem=problem[:100], geography=geography)
 
-    # Step 1: Real-time search for actual customer discussions & complaints
+    # Step 1: Real-time search for actual customer discussions & complaints in Parallel
     geo_suffix = f" {geography}" if geography and geography.lower() != "global" else ""
     search_queries = [
         f"{problem} customer complaints pain points discussions{geo_suffix}",
@@ -65,12 +65,18 @@ def validation_node(state: AgentState) -> dict:
     ]
     
     search_snippets = []
-    for q in search_queries:
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _exec_validation_search(q: str) -> str:
         try:
             res = search_service.search(q, max_results=3, search_depth="basic")
-            search_snippets.append(f"Search Query: {q}\n{res}")
+            return f"Search Query: {q}\n{res}"
         except Exception as e:
             logger.warning("validation_search_failed", query=q, error=str(e))
+            return f"Search Query: {q}\nNo signals retrieved."
+
+    with ThreadPoolExecutor(max_workers=max(len(search_queries), 1)) as executor:
+        search_snippets = list(executor.map(_exec_validation_search, search_queries))
 
     combined_search_context = "\n\n".join(search_snippets)
 

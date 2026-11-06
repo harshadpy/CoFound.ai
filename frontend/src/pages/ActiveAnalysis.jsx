@@ -30,6 +30,7 @@ export default function ActiveAnalysis() {
     const { 
         currentAnalysisId, 
         analysisStatus, 
+        analysisError,
         pollStatus, 
         agentStatuses, 
         agentMetrics, 
@@ -418,7 +419,7 @@ export default function ActiveAnalysis() {
                 <div className="mt-12 text-center">
                     {analysisStatus === "failed" && (
                         <ErrorBanner
-                            message="Analysis failed. Please check your API keys or try again."
+                            message={analysisError || "Analysis failed. Please check your API keys or try again."}
                             onRetry={handleRetry}
                         />
                     )}

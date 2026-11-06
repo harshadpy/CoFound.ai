@@ -85,14 +85,20 @@ def competitor_node(state: AgentState) -> dict:
 
     logger.info("generated_queries", queries=queries)
 
-    # Step 2: Execute Search
+    # Step 2: Execute Search in Parallel
     search_results = []
-    for q in queries:
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _exec_search(q: str) -> str:
         try:
             res = search_tool.run(q)
-            search_results.append(f"Query: {q}\nResult:\n{res}")
+            return f"Query: {q}\nResult:\n{res}"
         except Exception as e:
             logger.error("search_failed", query=q, error=str(e))
+            return f"Query: {q}\nResult:\nSearch unavailable."
+
+    with ThreadPoolExecutor(max_workers=max(len(queries), 1)) as executor:
+        search_results = list(executor.map(_exec_search, queries))
     
     combined_results = "\n\n".join(search_results)
     

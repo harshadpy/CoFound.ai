@@ -558,7 +558,15 @@ async def stream_analysis(analysis_id: str):
                 if not STREAM_SUBSCRIBERS[analysis_id]:
                     del STREAM_SUBSCRIBERS[analysis_id]
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 @router.get("/api/analysis/{analysis_id}/report")
 async def get_analysis_report(analysis_id: str):
